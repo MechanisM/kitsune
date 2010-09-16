@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 from django.contrib.auth.models import User, Permission
 
-from nose.plugins.skip import SkipTest
+from nose import SkipTest
 from nose.tools import eq_
 from pyquery import PyQuery as pq
 

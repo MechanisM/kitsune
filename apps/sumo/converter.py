@@ -1,5 +1,18 @@
 import re
 
+
+# TODO: check that headings get converted correctly. I noticed some weirndess
+#       while testing that.
+# TODO: stop stripping everything we don't know about and attempt to convert
+#       some things, such as:
+#       * {img}
+#       * {ANAME}
+#       * {SHOWFOR}
+#       * {PATH}
+#       * {MENU}
+#       * ~tc~, ~hc~, ~np~
+#       * {DIV}
+#       * {content label=...}
 MARKUP_PATTERNS = (
     # Turns [external|link] into [external link] but not [[internal|links]]
     (r'(?!\[\[)\[(?P<href>[^\]]*?)\|(?P<name>[^\]]*?)\]',

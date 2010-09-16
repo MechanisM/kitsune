@@ -91,6 +91,62 @@ class WikiPage(ModelBase):
         return settings.WIKI_CREATE_URL % name.replace(' ', '+')
 
 
+class Freetag(ModelBase):
+    tagId = models.AutoField(primary_key=True)
+    tag = models.CharField(max_length=30)
+    raw_tag = models.CharField(max_length=50)
+    lang = models.CharField(max_length=250, null=True)
+
+    class Meta:
+        db_table = 'tiki_freetags'
+
+    def __unicode__(self):
+        return self.tag
+
+
+class FreetaggedObject(ModelBase):
+    tagId = models.IntegerField(db_index=True)
+    objectId = models.IntegerField(db_index=True, default=0)
+    user = models.CharField(max_length=200)
+    lastModif = models.IntegerField(default=0)
+
+    class Meta:
+        db_table = 'tiki_freetagged_objects'
+        unique_together = ('tagId', 'user', 'objectId')
+
+    def __unicode__(self):
+        return self.tagId + ':' + self.objectId + ':' + self.user
+
+
+class TikiObject(ModelBase):
+    objectId = models.IntegerField(primary_key=True)
+    type = models.CharField(max_length=50, null=True)
+    itemId = models.CharField(max_length=255, null=True)
+    description = models.TextField()
+    created = models.IntegerField(null=True)
+    name = models.CharField(max_length=200, null=True)
+    href = models.CharField(max_length=200, null=True)
+    hits = models.IntegerField(null=True)
+
+    class Meta:
+        db_table = 'tiki_objects'
+
+    def __unicode__(self):
+        return str(self.objectId)
+
+
+class CategoryObject(ModelBase):
+    catObjectId = models.IntegerField()
+    categId = models.IntegerField(db_index=True)
+
+    class Meta:
+        db_table = 'tiki_category_objects'
+        unique_together = ('catObjectId', 'categId')
+
+    def __unicode__(self):
+        return "%s:%s" % (self.catObjectId, self.categId)
+
+
 class Category(ModelBase):
     categId = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100, null=True)

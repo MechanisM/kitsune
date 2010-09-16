@@ -298,5 +298,94 @@
             "title": "Best Practices for Support Documents",
             "desc_auto": "y"
         }
+    },
+    {
+        "pk": 5965,
+        "model": "sumo.wikipage",
+        "fields": {
+            "comment": "use {content label=customhistory}  [approved by Chris_Ilias]",
+            "creator": "Bo",
+            "ip": "174.114.128.121",
+            "keywords": null,
+            "points": null,
+            "cache_timestamp": 0,
+            "votes": null,
+            "title": "Deleting cookies",
+            "cache": null,
+            "page_size": 4052,
+            "content": "{SHOWFOR(spans=on)/}\r\n\r\n((Cookies)) are stored on your computer by websites you visit and contain information such as site\u200b pref\u200beren\u200bces \u200bor logi\u200bn stat\u200bus. This article describes how to delete cookies in Firefox. \r\n\r\n{SHOWFOR(browser=firefox3.5)}\r\n* To clear your browsing history, cookies, and temporarily cached files at once, see ((Clear Recent History)).\r\n{SHOWFOR}\r\n{SHOWFOR(browser=firefox3.0)}\r\n* To clear your browsing history, cookies, and temporarily cached files at once, see ((Clearing Private Data)).\r\n{SHOWFOR}\r\n* To prevent websites from storing cookies on your computer, see ((Blocking cookies)).\r\n\r\n{maketoc}\r\n\r\n{SHOWFOR(browser=firefox3.5)}\r\n!Delete cookies for a single site\r\nTo delete cookies for one site:\r\n# {content label=optionspreferences}\r\n{content label=customhistory} \r\n# Click {DIV(class=button,type=&gt;span)}Show Cookies...{DIV}. The Cookies window will appear. {DIV(class=noMac,type=span)}%%% %%% {img src=&quot;img/wiki_up/ab963d736461b221f497eb33a7f09b1a-1260044801-604-4.png&quot; } %%%{DIV}{DIV(class=mac,type=span)}{img src=&quot;img/wiki_up/ab963d736461b221f497eb33a7f09b1a-1252719697-583-1.jpg&quot; }{DIV}\r\n# In the __Search:__ field, type the name of the site whose cookies you want to remove. The cookies that match your search will be displayed.\r\n# Select the cookie(s) in the list to remove and click {DIV(class=button,type=&gt;span)}Remove Cookie{DIV}.{DIV(class=noMac,type=span)}%%% %%% {img src=&quot;img/wiki_up/ab963d736461b221f497eb33a7f09b1a-1260044801-604-3.png&quot; } %%%{DIV}{DIV(class=mac,type=span)}{img src=&quot;img/wiki_up/ab963d736461b221f497eb33a7f09b1a-1251872857-60-3.jpg&quot; }{DIV}\r\n** Select the first cookie and press {TAG(tag=kbd)}Shift{TAG}+{TAG(tag=kbd)}End{TAG} to select all the cookies in the list.\r\n# {DIV(type=span,class=noMac)}Click {DIV(class=button,type=&gt;span)}Close{DIV} to close{DIV}{DIV(type=span,class=mac)}Close{DIV} the Cookies window.\r\n{SHOWFOR}\r\n{SHOWFOR(browser=firefox3.0)}\r\n!Delete cookies for a single site\r\nTo delete cookies for one site:\r\n# {content label=optionspreferences}\r\n# Select the {MENU()}Privacy{MENU} panel.\r\n# Click {DIV(class=button,type=&gt;span)}Show Cookies...{DIV}. The Cookies window will appear.\r\n# In the __Search:__ field, type the name of the site whose cookies you want to remove. The cookies that match your search will be displayed.\r\n# Select the cookie(s) in the list to remove and click {DIV(class=button,type=&gt;span)}Remove Cookie{DIV}.\r\n** Select the first cookie and press {TAG(tag=kbd)}Shift{TAG}+{TAG(tag=kbd)}End{TAG} to select all the cookies in the list.\r\n# {DIV(type=span,class=noMac)}Click {DIV(class=button,type=&gt;span)}Close{DIV} to close{DIV}{DIV(type=span,class=mac)}Close{DIV} the Cookies window.\r\n# {content label=closeOptionsPreferences}\r\n{SHOWFOR}\r\n\r\n!Delete all cookies\r\nTo delete all cookies stored on your computer:\r\n{SHOWFOR(browser=firefox3.5)}\r\n# Click on the {MENU()}Tools{MENU} menu and select {MENU()}Clear Recent History...{MENU}.\r\n# Set __Time range to clear__ to __Everything__.\r\n# Click on the arrow next to __Details__ to expand the list of history items.\r\n# Select __Cookies__  and make sure that other items you want to keep are not selected.  {DIV(class=noMac,type=span)}%%% %%% {img src=&quot;img/wiki_up/ab963d736461b221f497eb33a7f09b1a-1260044801-604-2.png&quot; } %%%{DIV}{DIV(class=mac,type=span)}%%% %%% {img src=&quot;img/wiki_up/ab963d736461b221f497eb33a7f09b1a-1260044801-604-1.png&quot; } %%%{DIV}\r\n# Click {DIV(class=button,type=&gt;span)}Clear Now{DIV} to clear the cookies and close the Clear Recent History window.\r\n{SHOWFOR}\r\n{SHOWFOR(browser=firefox3.0)}\r\n# Click on the {MENU()}Tools{MENU} menu and select {MENU()}Clear Private Data...{MENU}.\r\n# Click to select __Cookies__ and make sure that other items you want to keep are not selected.\r\n# Click {DIV(class=button,type=&gt;span)}Clear Private Data Now{DIV} to clear the cookies and close the Clear Private Data window.\r\n{SHOWFOR}",
+            "version": 29,
+            "wiki_cache": null,
+            "lockedby": "",
+            "description": "",
+            "is_html": false,
+            "flag": "",
+            "user": "Chris_Ilias",
+            "lastModif": 1266374400,
+            "lang": "en",
+            "hits": 268,
+            "created": 1251421704,
+            "pageRank": null,
+            "desc_auto": "y"
+        }
+    },
+    {
+        "pk": 6234,
+        "model": "sumo.wikipage",
+        "fields": {
+            "comment": "tag [approvata da underpass]",
+            "creator": "michro",
+            "ip": "63.245.213.6",
+            "keywords": null,
+            "points": null,
+            "cache_timestamp": 0,
+            "votes": null,
+            "title": "Eliminare i cookie",
+            "cache": null,
+            "page_size": 4300,
+            "content": "{SHOWFOR(spans=on)/}\r\n\r\nI ((Cookies|cookie)) vengono memorizzati all'interno del proprio computer dai siti web visitati e contengono informazioni come, ad esempio, le preferenze relative alla navigazione all'interno del sito e le informazioni automatiche di accesso. Questo articolo descrive come eliminare i cookie in Firefox.\r\n{SHOWFOR(browser=firefox3.5)}\r\n* Per eliminare contemporaneamente la cronologia, i cookie e i file temporanei memorizzati, leggere l'articolo ((Clear Recent History)).\r\n{SHOWFOR}\r\n{SHOWFOR(browser=firefox3.0)}\r\n* Per eliminare contemporaneamente la cronologia, i cookie e i file temporanei memorizzati, leggere l'articolo ((Clearing Private Data)).\r\n{SHOWFOR}\r\n* Per impedire ai siti web di impostare i cookie sul proprio computer, leggere l'articolo ((Blocking cookies)).\r\n\r\n{maketoc}\r\n\r\n{SHOWFOR(browser=firefox3.5)}\r\n!Eliminare i cookie per un sito specifico\r\nPer eliminare i cookie per un sito specifico:\r\n# {content label=optionspreferences}\r\n{content label=customhistory} \r\n# Fare clic sulla voce {DIV(class=button,type=&gt;span)}Mostra i cookie...{DIV}. Verr\u00e0 visualizzata la finestra Cookie. %%% %%%{img src=&quot;img/wiki_up/469ca2ac5b71c593255bd64529b56a16-1253435915-213-1.png&quot; }{content label=windowsPic}\r\n# Nel campo __Cerca:__, digitare il nome del sito di cui si vogliono rimuovere i cookie. Apparir\u00e0 un elenco che riporta i cookie relativi alla ricerca effettuata.\r\n# Nell'elenco, selezionare i cookie da rimuovere e fare clic sul pulsante {DIV(class=button,type=&gt;span)}Rimuovi cookie{DIV}. %%% %%%{img src=&quot;img/wiki_up/469ca2ac5b71c593255bd64529b56a16-1253435915-213-2.png&quot; }{content label=windowsPic}\r\n** Per selezionare tutti i cookie presenti nell'elenco, selezionare il primo cookie e premere i tasti {TAG(tag=kbd)}Maiusc{TAG}+{TAG(tag=kbd)}Fine{TAG}.\r\n# {DIV(class=noMac,type=span)}Fare clic sul pulsante {DIV(class=button,type=&gt;span)}Chiudi{DIV} per chiudere la finestra Cookie{DIV}{DIV(class=mac,type=span)}Chiudere la finestra Cookie{DIV}.\r\n# {content label=closeOptionsPreferences}\r\n{SHOWFOR}\r\n{SHOWFOR(browser=firefox3.0)}\r\n!Eliminare i cookie per un sito specifico\r\nPer eliminare i cookie per un sito specifico:\r\n# {content label=optionspreferences}\r\n# Selezionare il pannello {MENU()}Privacy{MENU}.\r\n# Fare clic sulla voce {DIV(class=button,type=&gt;span)}Mostra i cookie...{DIV}. Verr\u00e0 visualizzata la finestra Cookie.\r\n# Nel campo __Cerca:__, digitare il nome del sito di cui si vogliono rimuovere i cookie. Apparir\u00e0 un elenco che riporta i cookie relativi alla ricerca effettuata.\r\n# Nell'elenco, selezionare i cookie da rimuovere e fare clic sul pulsante {DIV(class=button,type=&gt;span)}Rimuovi cookie{DIV}.\r\n** Per selezionare tutti i cookie presenti nell'elenco, selezionare il primo cookie e premere i tasti {TAG(tag=kbd)}Maiusc{TAG}+{TAG(tag=kbd)}Fine{TAG}.\r\n# {DIV(class=noMac,type=span)}Fare clic sul pulsante Chiudi per chiudere la finestra Cookie{DIV}{DIV(class=mac,type=span)}Chiudere la finestra Cookie{DIV}.\r\n# {content label=closeOptionsPreferences}\r\n{SHOWFOR}\r\n\r\n!Eliminare tutti i cookie\r\nPer eliminare tutti i cookie memorizzati sul proprio computer:\r\n{SHOWFOR(browser=firefox3.5)}\r\n# Fare clic sul menu {MENU()}Strumenti{MENU} e selezionare {MENU()}Cancella cronologia recente...{MENU}.\r\n# Dal menu a tendina __Intervallo di tempo da cancellare:__ selezionare __Tutto__.\r\n# Fare clic sulla freccia accanto a __Dettagli__ per visualizzare l'elenco degli elementi da eliminare. \r\n# Selezionare __Cookie__ e assicurarsi che non siano selezionati gli altri elementi che si intende conservare. %%% %%%{img src=&quot;img/wiki_up/469ca2ac5b71c593255bd64529b56a16-1253436082-852-1.png&quot; }{content label=windowsPic}\r\n# Fare clic su {DIV(class=button,type=&gt;span)}Cancella adesso{DIV} per eliminare i cookie, chiudere quindi la finestra Cancella tutta la cronologia.\r\n{SHOWFOR}\r\n{SHOWFOR(browser=firefox3.0)}\r\n# Fare clic sul menu {MENU()}Strumenti{MENU} e selezionare {MENU()}Elimina i dati personali...{MENU}.\r\n# Selezionare __Cookie__ e assicurarsi che non siano selezionati gli altri elementi che si intende conservare.\r\n# Fare clic su {DIV(class=button,type=&gt;span)}Elimina i dati personali adesso{DIV} per eliminare i cookie, chiudere quindi la finestra Elimina i dati personali.\r\n{SHOWFOR}\r\n",
+            "version": 16,
+            "wiki_cache": null,
+            "lockedby": "",
+            "description": "",
+            "is_html": false,
+            "flag": "",
+            "user": "underpass",
+            "lastModif": 1266391723,
+            "lang": "it",
+            "hits": 2,
+            "created": 1253367170,
+            "pageRank": null,
+            "desc_auto": "y"
+        }
+    },
+    {
+        "pk": 16940,
+        "model": "sumo.categoryobject",
+        "fields": {
+            "catObjectId": 29978,
+            "categId": 14
+        }
+    },
+    {
+        "pk": 16942,
+        "model": "sumo.categoryobject",
+        "fields": {
+            "catObjectId": 29978,
+            "categId": 25
+        }
+    },
+    {
+        "pk": 29978,
+        "model": "sumo.tikiobject",
+        "fields": {
+            "itemId": "Deleting cookies",
+            "hits": 0,
+            "description": "",
+            "created": 1251421705,
+            "href": "tiki-index.php?page=Deleting+cookies",
+            "type": "wiki page",
+            "name": "Deleting cookies"
+        }
     }
 ]
