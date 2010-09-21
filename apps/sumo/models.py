@@ -55,7 +55,7 @@ class WikiPage(ModelBase):
         db_table = "tiki_pages"
 
     def __unicode__(self):
-        return self.title
+        return '[%s] %s' % (self.lang, self.title)
 
     @property
     def name(self):
@@ -91,6 +91,7 @@ class WikiPage(ModelBase):
         return settings.WIKI_CREATE_URL % name.replace(' ', '+')
 
 
+"""
 class Freetag(ModelBase):
     tagId = models.AutoField(primary_key=True)
     tag = models.CharField(max_length=30)
@@ -116,13 +117,14 @@ class FreetaggedObject(ModelBase):
 
     def __unicode__(self):
         return self.tagId + ':' + self.objectId + ':' + self.user
+"""
 
 
 class TikiObject(ModelBase):
     objectId = models.IntegerField(primary_key=True)
     type = models.CharField(max_length=50, null=True)
     itemId = models.CharField(max_length=255, null=True)
-    description = models.TextField()
+    description = models.TextField(null=True)
     created = models.IntegerField(null=True)
     name = models.CharField(max_length=200, null=True)
     href = models.CharField(max_length=200, null=True)

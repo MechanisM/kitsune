@@ -1,8 +1,9 @@
 from nose.tools import eq_
+from nose import SkipTest
 
 from sumo.converter import TikiMarkupConverter
 from sumo.tests import TestCase
-
+from wiki.models import REDIRECT_CONTENT
 
 converter = TikiMarkupConverter()
 
@@ -74,30 +75,9 @@ class TestConverter(TestCase):
         content = '{CODE()}\nthis is code\n{CODE}'
         eq_('<code>\nthis is code\n</code>', converter.convert(content))
 
-    def test_remove_not_allowed_plugins(self):
-        content = 'lala\n{maketoc} \nblarg\n{ANAME()}This is an ANAME{ANAME}'
-        eq_('lala\n  \nblarg\n This is an ANAME ',
-            converter.convert(content))
-        content = '{SPAN()}something{SPAN}{DIV()} blah{DIV}'
-        eq_(' something   blah ', converter.convert(content))
-        content = '{DIV(class=nomac)}something{DIV}'
-        eq_(' something ', converter.convert(content))
-
     def test_remove_percents(self):
         content = '# lala  %%% line break'
         eq_('# lala  <br/> line break', converter.convert(content))
-
-    def test_remove_comments(self):
-        content = '~np~((Basic Troubleshooting|#Clean reinstall)) ~/np~'
-        eq_(' [[Basic Troubleshooting|#Clean reinstall]]  ',
-            converter.convert(content))
-        content = '~tc~((Basic Troubleshooting)) ~/tc~'
-        eq_(' [[Basic Troubleshooting]]  ', converter.convert(content))
-
-    def test_blockquote(self):
-        content = '^ a multiline\n blockquote ^'
-        eq_('<blockquote> a multiline\n blockquote </blockquote>',
-            converter.convert(content))
 
     def test_unicode(self):
         # French
@@ -129,3 +109,330 @@ class TestConverter(TestCase):
                     * [[Cannot connect after upgrading]] <br/> Blah"""
 
         eq_(expected, converter.convert(content))
+
+    def test_button_div(self):
+        """Button syntax."""
+        content = 'Here is a {DIV(class=button,type=span)}button text{DIV}.'
+        expected = 'Here is a {button button text}.'
+        eq_(expected, converter.parse(content)[0])
+
+        content = ('Multiple {DIV(class=button,type=span)}button{DIV}. '
+                   'Buttons {DIV(class=button,type=span)}!{DIV}. ')
+        expected = 'Multiple {button button}. Buttons {button !}.'
+        eq_(expected, converter.parse(content)[0])
+
+    def test_showfor(self):
+        """Showfor syntax."""
+        content = 'Show me {DIV(class=mac,type=span)}for mac{DIV}.'
+        expected = 'Show me {for mac}for mac{/for}.'
+        eq_(expected, converter.parse(content)[0])
+
+    def test_showfor_aliases(self):
+        """Showfor aliases for noMac, noWin, etc"""
+        content = 'My {DIV (class=noMac,type=span)}some text{DIV}.'
+        expected = 'My {for win,linux}some text{/for}.'
+        eq_(expected, converter.parse(content)[0])
+        content = '{DIV (class= noWindows , type= span)}some text{DIV}.'
+        expected = '{for mac,linux}some text{/for}.'
+        eq_(expected, converter.parse(content)[0])
+        content = ('Click on the {DIV(class=button,type=>span)}text{DIV}'
+                   '{DIV(class=noUnix,type=span)}Views{DIV} button')
+        expected = 'Click on the {button text}{for win,mac}Views{/for} button'
+        eq_(expected, converter.parse(content)[0])
+
+    def test_div_nesting_crazy(self):
+        """Test with some real nested {DIV}s. Real data, can you believe it?"""
+        content = (
+            u'Les {DIV(class=>win,type=>span)}options{DIV} '               # 1
+            u'{DIV(class=>noWin,type=>span)}pr\xc3f\xc3rences{DIV} '       # 2
+            u'de blocage des fenetres popup sont situ\xc3es dans le '      # 3
+            u'((Fenetre des options|#content_options|panneau ''Contenu'')) '
+            u'dans {DIV(class=>win,type=>span)} '                          # 5
+            u'{DIV(class=>menuPath,type=>span)}Outils > Options{DIV}'      # 6
+            u'{DIV}{DIV(class=>unix,type=>span)} '                         # 7
+            u'{DIV(class=>menuPath,type=>span)}Edition > Pr\xc3ferences'   # 8
+            u'{DIV}{DIV}{DIV(class=>mac,type=>span)} '                     # 9
+            u'{DIV(class=>menuPath,type=>span)} Firefox > '                # 10
+            u'Preferences{DIV}{DIV}.')                                     # 11
+        expected = (
+            u'Les {for win}options{/for} '                                 # 1
+            u'{for mac,linux}pr\xc3f\xc3rences{/for} '                     # 2
+            u'de blocage des fenetres popup sont situ\xc3es dans le '      # 3
+            u'[[Fenetre des options|#content_options|panneau Contenu]] '   # 4
+            u'dans {for win} '                                             # 5
+            u'{menu Outils > Options}'                                     # 6
+            u'{/for}{for linux} '                                          # 7
+            u'{menu Edition > Pr\xc3ferences}'                             # 8
+            u'{/for}{for mac} '                                            # 9
+            u'{menu  Firefox > Preferences}'                               # 10
+            u'{/for}.')                                                    # 11
+
+        eq_(expected, converter.parse(content)[0])
+
+    def test_div_triple_nesting(self):
+        """OMG, it's a triple rainbow!!!"""
+        content = (
+            u'Les {DIV(class=>win,type=>span)}options '                    # 1
+            u'{DIV(class= firefox3,type=>span)}pr\xc3f\xc3rences '         # 2
+            u'{DIV(type=&span,class=&button)}de blocage{DIV} woot!'        # 3
+            u'{DIV}{DIV}.')                                                # 4
+        expected = (
+            u'Les {for win}options '                                       # 1
+            u'{for fx3}pr\xc3f\xc3rences '                                 # 2
+            u'{button de blocage} woot!'                                  # 3
+            u'{/for}{/for}.')                                              # 4
+
+        eq_(expected, converter.parse(content)[0])
+
+    def test_key_multi_class(self):
+        """Multiple classes on a div."""
+        content = '{DIV(type=span,class=kbd noMac)}Ctrl{DIV}'
+        expected = '{for win,linux}{key Ctrl}{/for}'
+
+        eq_(expected, converter.parse(content)[0])
+
+    def test_tag_single(self):
+        """Single tag works."""
+        content = '{TAG(tag=kbd)}Ctrl{TAG}'
+        expected = '{key Ctrl}'
+        eq_(expected, converter.parse(content)[0])
+
+    def test_div_tag_mixed(self):
+        """{TAG} and {DIV} mixed."""
+        content = ('Some {DIV(type=span,class=noMac)} text'
+                   ' {TAG(tag=kbd)}here{TAG} goes{DIV}.')
+        expected = 'Some {for win,linux} text {key here} goes{/for}.'
+        eq_(expected, converter.parse(content)[0])
+
+    def test_div_no_class_or_type(self):
+        """{DIV()}...{DIV}."""
+        content = '{DIV()}a div{DIV}'
+        expected = '<div>a div</div>'
+        eq_(expected, converter.parse(content)[0])
+        content = '{DIV()}a {DIV()}nested{DIV} div{DIV}'
+        expected = '<div>a <div>nested</div> div</div>'
+        eq_(expected, converter.parse(content)[0])
+
+    def test_showfor_spans(self):
+        """{SHOWFOR(spans=on)/} is skipped."""
+        content = '{SHOWFOR(spans=on)/}'
+        expected = ''
+
+        eq_(expected, converter.parse(content)[0])
+
+    def test_showfor_browser(self):
+        """{SHOWFOR(browser=...)}."""
+        content = ('So {SHOWFOR(browser=firefox3)}3.0 me{SHOWFOR}'
+                   ' and then {SHOWFOR(browser=ff4}4.0 me{SHOWFOR}!')
+        expected = 'So {for fx3}3.0 me{/for} and then {for fx4}4.0 me{/for}!'
+
+        eq_(expected, converter.parse(content)[0])
+
+    def test_showfor_browser_nested(self):
+        """Unrealistic showfor browser test."""
+        content = ('So {SHOWFOR(browser=firefox3+ff4)}3.0 me'
+                   ' and {SHOWFOR(browser=ff4}4.0 me{SHOWFOR}!{SHOWFOR}!')
+        expected = 'So {for fx4,fx3}3.0 me and {for fx4}4.0 me{/for}!{/for}!'
+
+        eq_(expected, converter.parse(content)[0])
+
+    def test_showfor_os(self):
+        """{SHOWFOR(os=...)}."""
+        content = ('So {SHOWFOR(os=unix)}unixify{SHOWFOR}'
+                   '! and {SHOWFOR(os=windows}win{SHOWFOR}!')
+        expected = 'So {for linux}unixify{/for}! and {for win}win{/for}!'
+
+        eq_(expected, converter.parse(content)[0])
+
+    def test_showfor_mixed(self):
+        """Mix showfors desperately."""
+        content = ('So {SHOWFOR(os=unix+mac)}unixify '
+                   'on {SHOWFOR(browser=firefox4}4.0 '
+                   '{SHOWFOR(os=mac)}mac only{SHOWFOR} or '
+                   '{SHOWFOR(os=linux)}linux only{SHOWFOR}...{SHOWFOR}'
+                   ',,,{SHOWFOR}!')
+        expected = ('So {for mac,linux}unixify on {for fx4}4.0 '
+                    '{for mac}mac only{/for} or {for linux}linux only{/for}...'
+                    '{/for},,,{/for}!')
+
+        eq_(expected, converter.parse(content)[0])
+
+    def test_showfor_fx2(self):
+        """Firefox 2 is removed from showfor."""
+        content = ('So {SHOWFOR(browser=firefox3+ff2)}not removed'
+                   '{SHOWFOR(browser=ff2)}removed{SHOWFOR}!{SHOWFOR}!')
+        expected = 'So {for fx3}not removed!{/for}!'
+        eq_(expected, converter.parse(content)[0])
+        content = ('So {SHOWFOR(browser=firefox2)}removed{SHOWFOR}'
+                   '{SHOWFOR(browser=ff3)}not removed!{SHOWFOR}!')
+        expected = 'So {for fx3}not removed!{/for}!'
+        eq_(expected, converter.parse(content)[0])
+
+    def test_div_fx2(self):
+        content = 'Show me {DIV(class=fx2,type=span)}for mac{DIV}.'
+        expected = 'Show me .'
+        eq_(expected, converter.parse(content)[0])
+
+    def test_menu(self):
+        """{MENU()}...{MENU}."""
+        content = '{MENU()}File > new{MENU}'
+        expected = '{menu File > new}'
+        eq_(expected, converter.parse(content)[0])
+
+    def test_path(self):
+        """{PATH()}...{PATH}."""
+        content = '{PATH()}File > new{PATH}'
+        expected = '{menu File > new}'
+        eq_(expected, converter.parse(content)[0])
+
+    def test_pref(self):
+        """{PREF()}...{PREF}."""
+        content = '{PREF()}general.useragent.security{PREF}'
+        expected = '{pref general.useragent.security}'
+        eq_(expected, converter.parse(content)[0])
+
+    def test_file(self):
+        """{FILE)}...{FILE}."""
+        content = '{FILE()}File > new{FILE}'
+        expected = '{filepath File > new}'
+        eq_(expected, converter.parse(content)[0])
+
+    def test_np(self):
+        """~np~...~/np~."""
+        # Note: this is, strictly speaking, incorrect.
+        content = "~np~__Don't process this__~/np~"
+        expected = "<nowiki>'''Don't process this'''</nowiki>"
+        eq_(expected, converter.parse(content)[0])
+
+    def test_hc(self):
+        """~hc~...~/hc~."""
+        content = "~hc~__This is a comment__~/hc~"
+        expected = "<!--'''This is a comment'''-->"
+        eq_(expected, converter.parse(content)[0])
+
+    def test_tc(self):
+        """~tc~...~/tc~."""
+        content = "~tc~__This is a comment__~/tc~"
+        expected = "<!--'''This is a comment'''-->"
+        eq_(expected, converter.parse(content)[0])
+
+    def test_img_simple(self):
+        """Simple {img src=".."}"""
+        content = '{img src="img/wiki_up/Fx3exeBlocked.png"}'
+        expected = '[[Image:Fx3exeBlocked.png]]'
+        eq_(expected, converter.parse(content)[0])
+
+    def test_img_various(self):
+        """Various ways of messing with the syntax for {img ...}"""
+        content = '{img &quot;src /img/wiki_up/Fx3exeBlocked.png"}'
+        expected = '[[Image:Fx3exeBlocked.png]]'
+        eq_(expected, converter.parse(content)[0])
+
+        content = '{img src=/img/wiki_up/Fx3exeBlocked.png}'
+        expected = '[[Image:Fx3exeBlocked.png]]'
+        eq_(expected, converter.parse(content)[0])
+
+        content = '{img src=img/wiki_up/Fx3exeBlocked.png}'
+        expected = '[[Image:Fx3exeBlocked.png]]'
+        eq_(expected, converter.parse(content)[0])
+
+    def test_redirect(self):
+        """Redirect {REDIRECT(page=Some page)/}"""
+        content = '{REDIRECT(page=Remembering passwords)/}'
+        expected = REDIRECT_CONTENT % 'Remembering passwords'
+        eq_(expected, converter.parse(content)[0])
+
+    def test_remove_aname(self):
+        """ANAME and contents are replaced with whitespace."""
+        content = '{ANAME ( )}remove{ ANAME } this not {ANAME ( )}again{ANAME}'
+        expected = 'this not'
+        eq_(expected, converter.parse(content)[0])
+
+    def test_warning_nest(self):
+        """Warning system when parsing."""
+        content = '{TAG(tag=zzz)}{TAG(tag=zzz)}haha{TAG}{TAG}'
+        expected = '{key {key haha}}'
+        received = converter.parse(content)
+        eq_(expected, received[0])
+        assert 'Unrecognized tag (zzz).' in received[1], (
+               'Received: %s' % received[1])
+        assert "Can't nest tag." in received[1], (
+               'Received: %s' % received[1])
+
+    def test_warning_selfclosing(self):
+        content = '{DIV(class=button menu,type=>span)}some text{DIV}'
+        expected = '{button {menu some text}}'
+        received = converter.parse(content)
+        eq_(expected, received[0])
+        found = ('Found two or more self-closing classes in the same {DIV} '
+                 '(button menu).')
+        assert found in received[1], '"%s" not in "%s"' % (found, received[1])
+
+    def test_maketoc_remove(self):
+        """{maketoc} is removed, including surrounding whitepsace."""
+        content = '\n\n {maketoc}\n  \n\n'
+        expected = '\n\n'
+        eq_(expected, converter.convert(content))
+
+    def test_dynvars_remove(self):
+        """{DYNVARS()/} goes away."""
+        content = ('{DYNVARS()/}', '{DYNVARS}', '{DYNVARS()}', '{DYNVARS/}',
+                   '{DYNVARS(}')
+        expected = ' '
+        for c in content:
+            eq_(expected, converter.convert(c))
+        content = '{DYNVARS()}text{DYNVARS}'
+        eq_(' text ', converter.convert(content))
+
+    def test_note_hat(self):
+        """The hat (^) turns into {note}."""
+        content = '^__bold__^'
+        expected = "{note}'''bold'''{/note}"
+        eq_(expected, converter.parse(content)[0])
+
+    def test_note_hat_multiple(self):
+        """Multiple hats (^) turns into multiple {note}s properly."""
+        content = '^__bold__\n some^ and \n^ a \n{TAG(tag=kbd)}key{TAG}\n^'
+        expected = ("{note}'''bold'''\n some{/note} and \n{note} a \n"
+                    '{key key}\n{/note}')
+        eq_(expected, converter.parse(content)[0])
+
+        content = '\n^ \n __bold__ \n ^ and a lonely hat ^'
+        expected = "{note} \n '''bold''' \n {/note} and a lonely hat ^"
+        eq_(expected, converter.parse(content)[0])
+
+    def test_module_remove(self):
+        """{MODULE()/} goes away."""
+        raise SkipTest
+
+    def test_listprogress_remove(self):
+        """{LISTPROGRESS()/} goes away."""
+        raise SkipTest
+
+    def test_pagelist_remove(self):
+        """{PAGELIST()/} goes away."""
+        raise SkipTest
+
+    def test_tag_sup(self):
+        """{TAG(tag=>sup)}what's up?{TAG}."""
+        content = '{TAG(tag=sup)}yo dawg{TAG}'
+        expected = '<sup>yo dawg</sup>'
+        eq_(expected, converter.parse(content)[0])
+
+    def test_content_template_label(self):
+        """{content label=b}."""
+        content = '{content label=optionspreferences}'
+        expected = '[[T:optionspreferences]]'
+        eq_(expected, converter.parse(content)[0])
+
+    def test_content_template_id(self):
+        """{content id=1}."""
+        content = '{content id=467}'
+        expected = '[[T:closeFirefox]]'
+        eq_(expected, converter.parse(content)[0])
+
+    def test_content_template_idlabel(self):
+        """{content idlabel=1b}."""
+        content = '{content idlabel=2optionspreferences}'
+        expected = '[[T:optionspreferences]]'
+        eq_(expected, converter.parse(content)[0])

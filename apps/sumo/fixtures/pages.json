@@ -364,6 +364,14 @@
         "model": "sumo.categoryobject",
         "fields": {
             "catObjectId": 29978,
+            "categId": 1
+        }
+    },
+    {
+        "pk": 16941,
+        "model": "sumo.categoryobject",
+        "fields": {
+            "catObjectId": 29978,
             "categId": 14
         }
     },
@@ -373,6 +381,14 @@
         "fields": {
             "catObjectId": 29978,
             "categId": 25
+        }
+    },
+    {
+        "pk": 16943,
+        "model": "sumo.categoryobject",
+        "fields": {
+            "catObjectId": 27081,
+            "categId": 1
         }
     },
     {
@@ -386,6 +402,19 @@
             "href": "tiki-index.php?page=Deleting+cookies",
             "type": "wiki page",
             "name": "Deleting cookies"
+        }
+    },
+    {
+        "pk": 27081,
+        "model": "sumo.tikiobject",
+        "fields": {
+            "itemId": "Installing Firefox",
+            "hits": 0,
+            "description": "",
+            "created": 1247186608,
+            "href": "tiki-index.php?page=Installing+Firefox",
+            "type": "wiki page",
+            "name": "Installing Firefox"
         }
     }
 ]

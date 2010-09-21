@@ -120,7 +120,7 @@ class SimpleSyntaxTestCase(TestCase):
     def test_simple_inline_custom(self):
         """Simple custom inline syntax: menu, button, filepath"""
         p = WikiParser()
-        tags = ['menu', 'button', 'filepath']
+        tags = ['menu', 'button', 'filepath', 'pref']
         for tag in tags:
             doc = pq(p.parse('{%s this is a %s}' % (tag, tag)))
             eq_('this is a ' + tag, doc('span.' + tag).text())
