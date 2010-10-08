@@ -38,6 +38,14 @@ class TestConverter(TestCase):
         eq_('[[Internal link|named]] and [[Internal again]]',
             converter.convert(content))
 
+    def test_convert_same_page_link(self):
+        content = '((|#anchor))'
+        eq_('[[#anchor]]', converter.convert(content))
+
+    def test_convert_same_page_link_named(self):
+        content = ('((Internal 1|{img src="img/wiki_up/file.png" }))')
+        eq_('[[Image:file.png|page=Internal 1]]', converter.convert(content))
+
     def test_external_link(self):
         content = '[http://external.link]'
         eq_('[http://external.link]', converter.convert(content))
@@ -322,6 +330,21 @@ class TestConverter(TestCase):
         expected = '[[Image:Fx3exeBlocked.png]]'
         eq_(expected, converter.parse(content)[0])
 
+    def test_img_imalign(self):
+        """Image with alignment."""
+        # TODO: check tikiwiki image syntax for other values and params
+        content = '{img src="img/wiki_up/vista.jpg" vertical-imalign=middle}'
+        expected = '[[Image:vista.jpg|valign=middle]]'
+        eq_(expected, converter.parse(content)[0])
+
+    def test_img_external(self):
+        """Image linking to external site."""
+        content = ('{img src="http://test.com/vista.jpg" '
+                   'vertical-imalign=middle}')
+        expected = ('<img src="http://test.com/vista.jpg" '
+                    'style="vertical-align: middle">')
+        eq_(expected, converter.parse(content)[0])
+
     def test_img_various(self):
         """Various ways of messing with the syntax for {img ...}"""
         content = '{img &quot;src /img/wiki_up/Fx3exeBlocked.png"}'
@@ -435,4 +458,10 @@ class TestConverter(TestCase):
         """{content idlabel=1b}."""
         content = '{content idlabel=2optionspreferences}'
         expected = '[[T:optionspreferences]]'
+        eq_(expected, converter.parse(content)[0])
+
+    def test_screencast(self):
+        """{SCREENCAST (file=>some-file-hash)}{SCREENCAST}"""
+        content = '{SCREENCAST (file=>file-1234-123) }{SCREENCAST}'
+        expected = '[[Video:file-1234-123]]'
         eq_(expected, converter.parse(content)[0])

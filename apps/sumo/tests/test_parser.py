@@ -169,6 +169,11 @@ class TestWikiParser(TestCase):
         eq_('<p>&lt;showfor&gt;smoo&lt;/showfor&gt;</p>',
             self.p.parse('<showfor>smoo</showfor>').replace('\n', ''))
 
+    def test_external_irc_links(self):
+        eq_(u'<p><a href="irc://irc.mozilla.org" rel="nofollow">'
+            u'#sumo irc channel</a>\n</p>',
+            self.p.parse('[irc://irc.mozilla.org #sumo irc channel]'))
+
 
 class TestWikiInternalLinks(TestCase):
     fixtures = ['users.json']

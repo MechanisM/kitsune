@@ -1,64 +1,37 @@
+"""
+New syntax summary:
+
+* {DIV}
+  * unknown class => <span class="<unknown class>">
+  * class=noclass => <div></div>
+  * class=firefox version or operating system => {for mapped-version/os}
+  * class=button, menu, filepath => {button ...}, {menu ...}, {filepath ...}
+  * class=kbd => {key ...}
+* {SHOWFOR(browser=...,os=)} => {for browsers}{for oses}..
+
+* These don't allow nesting: (the above do)
+  * {PATH()}...{PATH} turns into {menu ...}
+  * {MENU()}...{MENU} turns into {menu ...}
+  * {FILE()}...{FILE} turns into {filepath ...}
+  * {PREF()}  turns into <span class="pref">
+  * ~tc~ ... ~/tc~ turns into HTML comment <!-- ... -->
+                    we don't support this atm afaik
+  * ~np~ ... ~/np~ turns into <nowiki> ... </nowiki>
+  * ~hc~ ... ~/hc~ -- HTML comment, turns into <!-- ... -->
+  * {img src="img/wiki_up/file.png"} turns into [[Image:file.png]]
+  * {REDIRECT(page=<page>)} turns into REDIRECT_CONTENT % '<page>'
+  These show warnings if you nest:
+  * {TAG}
+  * {SCREENCAST(file=>some-file-hash)}{SCRENCAST} turns into
+    [[Video:some-file-hash]]
+"""
+
 import re
 from xml.sax.saxutils import quoteattr
 
 from wiki.models import FIREFOX_VERSIONS, OPERATING_SYSTEMS, REDIRECT_CONTENT
 
 REDIRECTOR_REGEX = REDIRECT_CONTENT % '\g<page>'
-
-# Done:
-# * {DIV}
-#   * unknown class => <span class="<unknown class>">
-#   * class=noclass => <div></div>
-#   * class=firefox version or operating system => {for mapped-version/os}
-#   * class=button, menu, filepath => {button ...}, {menu ...}, {filepath ...}
-#   * class=kbd => {key ...}
-#   * {SHOWFOR(browser=...,os=)} => {for browsers}{for oses}..
-#
-#   These don't allow nesting:
-#   * {PATH()}...{PATH} turns into {menu ...}
-#   * {MENU()}...{MENU} turns into {menu ...}
-#   * {FILE()}...{FILE} turns into {filepath ...}
-#   * {PREF()}  turns into <span class="pref">
-#   * ~tc~ ... ~/tc~ turns into HTML comment <!-- ... -->
-#                     we don't support this atm afaik
-#   * ~np~ ... ~/np~ turns into <nowiki> ... </nowiki>
-#   * ~hc~ ... ~/hc~ -- HTML comment, turns into <!-- ... -->
-#   * {img src="img/wiki_up/file.png"} turns into [[Image:file.png]]
-#   * {REDIRECT(page=<page>)} turns into REDIRECT_CONTENT % '<page>'
-#   These show warnings if you nest:
-#   * {TAG}
-#
-# TODO: warnings for <script>, <style>, unrecognized {DIV}s
-#       (with inline styling), links containing images ((blah|{img})),
-#       linking to the same page ((|#anchor|{img} or link text))
-#       IRC links (f): [irc://irc.mozilla.org/sumo|#sumo IRC channel]
-# TODO: These probably won't get away with regexes because of nesting or other
-#       complications:
-#
-#       * 56 -- {SCREENCAST}. Example:
-#         {SCREENCAST(file=>4c1c74bdec0fed376c8d9202f3847f25-1260903514-765-0)}
-#         {SCREENCAST}
-#         ... turns into ...
-#         <span style="text-align: left; float: none; clear: none;">
-#           <div class="screencast-content-wrapper">
-#            <div id="4c1c74bdec0fed376c8d9202f3847f25-1260903514-765-0"
-#                 class="screencast-content">
-#             <div class="screencast-content-msg">
-#                Watch a video of these instructions</div>
-#             </div></div>
-#           <script type="text/javascript">
-#           /*&lt;![CDATA[*/ if ( typeof videos === "undefined" ) {
-#             videos = {}; }
-#             videos["4c1c74bdec0fed376c8d9202f3847f25-1260903514-765-0"] =
-#             ["http://videos.mozilla.org/serv/sumo/same-as-above.ogg",
-#              "http://videos.mozilla.org/serv/sumo/same-as-above.flv"];
-#             /*]]&gt;*/
-#           </script>
-#           <script type="text/javascript">
-#           /*&lt;![CDATA[*/ var screencastThumbText = "Insert Screencast"
-#           /*]]&gt;*/</script></span>
-#
-# Perhaps avoidable (either migrate or trim them):
 
 ID_LABEL_MAP = {
     20: 'suljefirefox',
@@ -91,14 +64,63 @@ def _content_templates(matchobj):
     return '[[T:%s]]' % value
 
 
+def _img_convert_param(param, use_wiki_syntax):
+    """Switch use_wiki_syntax to False to output HTML attrs instead."""
+    name_value = param.lower().split('=', 1)
+    if len(name_value) == 1:
+        return ''
+    name, value = name_value
+    name, value = name.strip(), value.strip()
+    if name == 'vertical-imalign':
+        # Circular imports FTL...
+        from sumo.parser import IMAGE_PARAMS
+        if not (value in IMAGE_PARAMS['valign']):
+            return ''
+        if use_wiki_syntax:
+            return 'valign=' + value
+
+        return ' style="vertical-align: ' + value + '"'
+
+    return ''
+
+
+def _img_get_params(params_group, use_wiki_syntax=True):
+    if params_group:
+        params_list = [_img_convert_param(p, use_wiki_syntax) for
+                       p in params_group.split(' ')]
+        if use_wiki_syntax:
+            return '|' + '|'.join(params_list)
+        return params_list
+    return ''
+
+
+def _internal_img_regex(matchobj):
+    """Turns {img src="blah.png" [vertical-imalign=middle]} to [[Image:...]]"""
+    file = matchobj.group('file')
+    params = _img_get_params(matchobj.group('params'))
+
+    return '[[Image:%s%s]]' % (file, params)
+
+
+def _external_img_regex(matchobj):
+    """Turns {img src="http://..."} to <img src="http://...">."""
+    url = matchobj.group('url')
+    params = _img_get_params(matchobj.group('params'), use_wiki_syntax=False)
+
+    return '<img src="%s"%s>' % (url, ' '.join(params))
+
+
 CONVERTER_PATTERNS = (
     # Turns [external|link] into [external link] but not [[internal|links]]
     (r'(?!\[\[)\[(?P<href>[^\]]*?)\|(?P<name>[^\]]*?)\]',
      '[\g<href> \g<name>]'),
     (r'===(?P<underlined>.*?)===', '<u>\g<underlined></u>'),
     (r'__(?P<bold>.*?)__', "'''\g<bold>'''"),
+    # Internal anchors only
+    (r'\(\(\|?(?P<hashlabel>#[^)]*?)\)\)', '[[\g<hashlabel>]]'),
+    # Links to pages
     (r'\(\((?P<href>[^)]*?)\|(?P<name>[^)]*?)\)\)', '[[\g<href>|\g<name>]]'),
-    (r'\(\((?P<href>.*?)\)\)', '[[\g<href>]]'),
+    (r'\(\((?P<href>[^)]*?)\)\)', '[[\g<href>]]'),
     (r'^!!!!!!\s*(?P<heading>.*?)$', '====== \g<heading> ======'),
     (r'^!!!!!\s*(?P<heading>.*?)$', '===== \g<heading> ====='),
     (r'^!!!!\s*(?P<heading>.*?)$', '==== \g<heading> ===='),
@@ -113,11 +135,18 @@ CONVERTER_PATTERNS = (
     (r'\{PREF\(\)\}(?P<txt>.*?)\{PREF\}', '{pref \g<txt>}'),
     (r'~np~(?P<txt>.*?)~\/np~', '<nowiki>\g<txt></nowiki>'),
     (r'~(h|t)c~(?P<txt>.*?)~\/(h|t)c~', '<!--\g<txt>-->'),
+    (r'\{SCREENCAST\s*\(\s*file=?\>?\s*(?P<file>.*?)\).*\}',
+     '[[Video:\g<file>]]'),
+    (r'\{\s*SCREENCAST\s*\}', ''),  # remaining are useless closing tags
     (r'\{img.*?'             # {img followed by anything
      r'src\s*=?"?\/?'        # stop at e.g. src ="/
      r'img\/wiki_up\/'       # follow it by img/wiki_up
-     r'(?P<file>.*?)"?\}',   # capture the file
-     '[[Image:\g<file>]]'),
+     r'(?P<file>[^\}" ]*)[ "]*(?P<params>.*)\}',   # capture the file
+     _internal_img_regex),
+    (r'\{img.*?'             # {img followed by anything
+     r'src\s*=?"?\/?'        # stop at e.g. src ="/
+     r'(?P<url>[^\}" ]*)[ "]*(?P<params>.*)\}',   # capture the url
+     _external_img_regex),
     (r'\{REDIRECT\s*\(\s*page\s*=\s*(?P<page>[^\)]*)\)\/?\}',
      REDIRECTOR_REGEX),
     (r'%{3,}', '<br/>'),
@@ -127,6 +156,11 @@ CONVERTER_PATTERNS = (
     (r'\{\s*ANAME\s*\([^\}\{]*?\}.*?\{[^\(\)]*?ANAME[^\(\)]*?\}', ' '),
     (r'\{\s*content\s*(idlabel|label|id)\s*=\s*([^\}\{]*?)\s*\}',
      _content_templates),
+    # After image and internal links were processed, it's possible they were
+    # nested. Fix that.
+    (r'\[\[(?P<href>[^\n):\]]+)\|\[\[Image:(?P<src>[^\n):\]]+)\]\]\]\]',
+     '[[Image:\g<src>|page=\g<href>]]'),
+    (r'\r', ''),
 )
 
 

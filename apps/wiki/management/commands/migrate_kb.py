@@ -16,10 +16,15 @@ tiki_category_objects
 Uses a markup converter to transform TikiWiki syntax to MediaWiki syntax.
 
 """
+# TODO: warnings for unrecognized {DIV}s (with inline styling)
+#       default right now to just turn into <div></div>
+# TODO: Add non-localizable document support (separate bug ######)
+# TODO: support for TAG strike (found in some English document)
+
 import logging
 import re
 from datetime import datetime
-from xml.sax.saxutils import unescape
+from HTMLParser import HTMLParser
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -38,6 +43,7 @@ from sumo.models import WikiPage, CategoryObject, TikiObject
 log = logging.getLogger('k.migrate')
 # Converts TikiWiki syntax to MediaWiki syntax
 converter = TikiMarkupConverter()
+htmlparser = HTMLParser()
 ANONYMOUS_USER_NAME = 'AnonymousUser'
 RE_REVIEWER = re.compile('\[?approved by ([^\]]+?)\]')
 TIKI_CATEGORY_MAP = {
@@ -45,7 +51,11 @@ TIKI_CATEGORY_MAP = {
     25: 2,  # Firefox 3.5-3.6
 }
 WARNINGS = {'no_parent': 'This document is missing its parent.',
-            'skip': 'This document is not being migrated.'}
+            'skip': 'This document is not being migrated.',
+            'same_content':
+              'This document has the same content an existing revision (%s).',
+            '<script>': 'This document contains <script> tags.',
+            '<style>': 'This document contains <style> tags.'}
 
 
 def get_django_user(obj, field_name='user'):
@@ -77,7 +87,7 @@ def get_slug(title):
 
 def get_locale(lang):
     """Validate against SUMO_LANGUAGES, return default if not found."""
-    lang = lang.strip()
+    lang = (lang or '').strip()
     return (lang if lang in settings.SUMO_LANGUAGES
                  else settings.WIKI_DEFAULT_LANGUAGE)
 
@@ -271,15 +281,17 @@ def get_comment_reviewer(comment):
 
 def check_content(content):
     """Returns warnings regarding potentially legacy TikiWiki syntax."""
-    # TODO
-    return []
+    warnings = []
+    for s in ('<script>', '<style>'):
+        if s in content:
+            warnings.append(WARNINGS[s])
+
+    return warnings
 
 
-def create_revision(td, document, is_approved=False):
+def create_revision(td, document, content, is_approved=False):
     """Create revision for a document using a Tiki document."""
     summary = td.description
-    content = unescape((td.content or '').strip())
-    content, warnings = converter.parse(content)
     keywords = td.keywords
     if keywords is None:  # this can be None
         keywords = ''
@@ -296,17 +308,40 @@ def create_revision(td, document, is_approved=False):
                         comment=comment, is_approved=is_approved,
                         reviewer=reviewer, creator=creator)
     revision.save()
-    return (revision, warnings)
+    return revision
 
 
-def create_document(td):
+def convert_content(tiki_content):
+    content = htmlparser.unescape((tiki_content or '').strip())
+    return converter.parse(content)
+
+
+def create_revision_on_slug_collision(td, title, locale, is_approved, content):
+    document = Document.objects.get(title=title, locale=locale)
+    revision = create_revision(td, document, content, is_approved)
+    if is_approved:  # This one is approved, so mark it as current
+        document.current_revision = revision
+        document.save()
+    return (document, revision)
+
+
+def create_document(td, verbosity=1):
     """Create a document from a Tiki document."""
+    warnings = []
+
     is_approved, title = get_title_is_approved(td.title)
     slug = get_slug(title)
 
-    warnings = []
-
     locale = get_locale(td.lang)
+
+    # Check for duplicate content and bail if there's already some
+    content, warnings = convert_content(td.content)
+    same_content_revs = Revision.objects.filter(content=content,
+                                                document__locale=locale)
+    if same_content_revs.exists():
+        if verbosity > 1:
+            warnings.append(WARNINGS['same_content'] % same_content_revs[0].id)
+        return (None, None, warnings)
 
     if locale == settings.WIKI_DEFAULT_LANGUAGE:
         parent, translated_locale = (None, settings.WIKI_DEFAULT_LANGUAGE)
@@ -328,41 +363,46 @@ def create_document(td):
                         parent=parent, category=category)
     try:
         document.save()
+
     except SlugCollision:  # A staging or approved copy was previously migrated
-        d = Document.objects.get(title=title, locale=locale)
-        revision, r_warnings = create_revision(td, d, is_approved)
-        warnings.extend(r_warnings)
-        if is_approved:  # This one is approved, so mark it as current
-            d.current_revision = revision
-            d.save()
-        return (d, revision, warnings)
-    """
+        document, revision = create_revision_on_slug_collision(
+            td, title, locale, is_approved, content)
+        return (document, revision, warnings)
+
     except IntegrityError:  # Usually caused by same parent for this locale
-        warnings.append(u'Using translated language (%s) instead of page '
-                        u'language (%s).' % (translated_locale, locale))
+        # Can we try to use the translation table's locale?
+        # If not, warn and fail
+        if translated_locale == locale:
+            warnings.append(u'A translation already exists for this document '
+                            u' in %s.' % locale)
+            return (None, None, warnings)
+
+        # Attempting a different locale
+        if verbosity > 1:
+            warnings.append(u'Using language from translation table (%s) '
+                            u'instead of page language (%s).' % (
+                            translated_locale, locale))
         document.locale = translated_locale
         try:
             document.save()
-        except SlugCollision:
-            if is_approved:
-                Document.objects.filter(title=title, locale=locale).delete()
-                return create_document(td)
+        except SlugCollision:  # A staging or approved copy exists
+            document, revision = create_revision_on_slug_collision(
+                td, title, translated_locale, is_approved, content)
+            return (document, revision, warnings)
         except IntegrityError:
-            warnings.append(u"Integrity error, could't figure out what "
-                            u'to do...')
-    """
+            warnings.append(u'A translation already exists for this document '
+                            u'in %s locale.' % translated_locale)
+            return (None, None, warnings)
 
-    warnings.extend(check_content(document.html))
+    warnings.extend(check_content(content))
 
     # Then create its first revision
-    revision, warnings = create_revision(td, document, is_approved)
+    revision = create_revision(td, document, content, is_approved)
 
     if is_approved:
         # Update the document's current revision
         document.current_revision = revision
         document.save()
-
-    warnings.extend(check_content(document.html))
 
     return (document, revision, warnings)
 
@@ -484,8 +524,8 @@ def fetch_rest_documents(count, offset):
 
 class Command(NoArgsCommand):
     help = 'Migrate data for tiki pages.'
-    max_documents = 2000  # Max number of documents to store at any time
-    max_total_documents = 2000  # Max number of documents to migrate
+    max_documents = 9000  # Max number of documents to store at any time
+    max_total_documents = 9000  # Max number of documents to migrate
     _exhausted_en_documents = False
 
     def fetch_documents(self, count, offset):
@@ -507,13 +547,12 @@ class Command(NoArgsCommand):
             warnings = create_template(template)[-1]
             for w in warnings:
                 log.debug(
-                    '(%s) Template:%s | #%s -- Warning: %s' % (
-                    template['locale'], template['label'],
-                    template['id'], w))
+                    'Warning: %s -- (%s) Template:%s | #%s' % (
+                    w, template['locale'], template['label'], template['id']))
 
         def print_template_info(template):
             if options['verbosity'] > 1:
-                print 'Processng (%s) Template:%s | #%s...' % (
+                print 'Processing (%s) Template:%s | #%s...' % (
                     template['locale'], template['label'],
                     template['id'])
 
@@ -566,7 +605,8 @@ class Command(NoArgsCommand):
                     tiki_document.page_id)
 
             # Create document...
-            document, _, warnings = create_document(tiki_document)
+            document, _, warnings = create_document(tiki_document,
+                                                    options['verbosity'])
             if document:
                 # Then create its metadata: fx version, OS...
                 create_document_metadata(document, tiki_document)
@@ -579,9 +619,9 @@ class Command(NoArgsCommand):
                 warnings.append(WARNINGS['no_parent'])
 
             for w in warnings:
-                log.debug(u'(%s) %s | #%s -- Warning: %s' % (
-                          tiki_document.lang, tiki_document.title,
-                          tiki_document.page_id, w))
+                log.debug(u'Warning: %s -- (%s) %s | #%s' % (
+                          w, tiki_document.lang, tiki_document.title,
+                          tiki_document.page_id))
 
         if options['verbosity'] > 0:
             print u'Successfully migrated documents in KB'

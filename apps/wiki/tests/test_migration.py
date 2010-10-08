@@ -9,7 +9,7 @@ from wiki.management.commands.migrate_kb import (
     create_document, create_revision, get_parent_lang, get_locale, get_slug,
     get_title_is_approved, get_firefox_versions, create_document_metadata,
     get_category, check_content, get_comment_reviewer, ANONYMOUS_USER_NAME,
-    fetch_content_templates, create_template)
+    fetch_content_templates, create_template, convert_content)
 from wiki.tests import document
 
 
@@ -35,6 +35,10 @@ class HelpersNoFixtures(TestCase):
 
     def test_check_content(self):
         """TODO"""
+        raise SkipTest
+
+    def test_convert_content(self):
+        """TODO: check a bunch of things are migrated correctly."""
         raise SkipTest
 
 
@@ -238,7 +242,7 @@ class HelpersFixtures(TestCase):
         td = WikiPage.objects.get(title='Installing Firefox')
         d = document()
         d.save()
-        r = create_revision(td, d)[0]
+        r = create_revision(td, d, convert_content(td.content)[0])
         eq_(d, r.document)
         eq_(td.description, r.summary)
         assert r.content is not '', (
