@@ -20,6 +20,8 @@ Uses a markup converter to transform TikiWiki syntax to MediaWiki syntax.
 #       default right now to just turn into <div></div>
 # TODO: Add non-localizable document support (separate bug ######)
 # TODO: support for TAG strike (found in some English document)
+# TODO: exclude translations of English documents that are explicitly
+#       migrated. E.g. home page, dynamic variables, ...
 
 import logging
 import re
@@ -607,7 +609,7 @@ class Command(NoArgsCommand):
             # Create document...
             document, _, warnings = create_document(tiki_document,
                                                     options['verbosity'])
-            if document:
+            if document and document.parent is None:
                 # Then create its metadata: fx version, OS...
                 create_document_metadata(document, tiki_document)
 
