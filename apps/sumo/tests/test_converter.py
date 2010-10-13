@@ -30,6 +30,11 @@ class TestConverter(TestCase):
         content = '((Internal link|link name))'
         eq_('[[Internal link|link name]]', converter.convert(content))
 
+    def test_internal_link_name_anchro(self):
+        content = '((Internal link|#anchor here|link name))'
+        eq_('[[Internal link#anchor here|link name]]',
+            converter.convert(content))
+
     def test_internal_link_multiple(self):
         content = '((Internal link)) and ((Internal again|named))'
         eq_('[[Internal link]] and [[Internal again|named]]',
@@ -166,7 +171,7 @@ class TestConverter(TestCase):
             u'Les {for win}options{/for} '                                 # 1
             u'{for mac,linux}pr\xc3f\xc3rences{/for} '                     # 2
             u'de blocage des fenetres popup sont situ\xc3es dans le '      # 3
-            u'[[Fenetre des options|#content_options|panneau Contenu]] '   # 4
+            u'[[Fenetre des options#content_options|panneau Contenu]] '    # 4
             u'dans {for win} '                                             # 5
             u'{menu Outils > Options}'                                     # 6
             u'{/for}{for linux} '                                          # 7

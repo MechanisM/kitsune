@@ -26,6 +26,8 @@ New syntax summary:
     [[Video:some-file-hash]]
 """
 
+# TODO: convert ;: at beginning of line
+
 import re
 from xml.sax.saxutils import quoteattr
 
@@ -118,8 +120,12 @@ CONVERTER_PATTERNS = (
     (r'__(?P<bold>.*?)__', "'''\g<bold>'''"),
     # Internal anchors only
     (r'\(\(\|?(?P<hashlabel>#[^)]*?)\)\)', '[[\g<hashlabel>]]'),
-    # Links to pages
+    # Link + anchor + text, because Tiki is vewwy special
+    (r'\(\((?P<href>[^)]*?)\|(?P<anchor>[^)]*?)\|(?P<name>[^)]*?)\)\)',
+     '[[\g<href>\g<anchor>|\g<name>]]'),
+    # Link + text
     (r'\(\((?P<href>[^)]*?)\|(?P<name>[^)]*?)\)\)', '[[\g<href>|\g<name>]]'),
+    # Just link
     (r'\(\((?P<href>[^)]*?)\)\)', '[[\g<href>]]'),
     (r'^!!!!!!\s*(?P<heading>.*?)$', '====== \g<heading> ======'),
     (r'^!!!!!\s*(?P<heading>.*?)$', '===== \g<heading> ====='),
@@ -141,11 +147,11 @@ CONVERTER_PATTERNS = (
     (r'\{img.*?'             # {img followed by anything
      r'src\s*=?"?\/?'        # stop at e.g. src ="/
      r'img\/wiki_up\/'       # follow it by img/wiki_up
-     r'(?P<file>[^\}" ]*)[ "]*(?P<params>.*)\}',   # capture the file
+     r'(?P<file>[^\}" ]*)[ "]*(?P<params>.*?)\}',   # capture the file
      _internal_img_regex),
     (r'\{img.*?'             # {img followed by anything
      r'src\s*=?"?\/?'        # stop at e.g. src ="/
-     r'(?P<url>[^\}" ]*)[ "]*(?P<params>.*)\}',   # capture the url
+     r'(?P<url>[^\}" ]*)[ "]*(?P<params>.*?)\}',   # capture the url
      _external_img_regex),
     (r'\{REDIRECT\s*\(\s*page\s*=\s*(?P<page>[^\)]*)\)\/?\}',
      REDIRECTOR_REGEX),
