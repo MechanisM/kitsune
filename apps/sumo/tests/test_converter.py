@@ -204,10 +204,16 @@ class TestConverter(TestCase):
 
         eq_(expected, converter.parse(content)[0])
 
-    def test_tag_single(self):
-        """Single tag works."""
+    def test_tag_kbd(self):
+        """kbd tag works."""
         content = '{TAG(tag=kbd)}Ctrl{TAG}'
         expected = '{key Ctrl}'
+        eq_(expected, converter.parse(content)[0])
+
+    def test_tag_strike(self):
+        """strike tag works."""
+        content = 'And {TAG(tag=strike)}one, two three... out{TAG}!'
+        expected = 'And <strike>one, two three... out</strike>!'
         eq_(expected, converter.parse(content)[0])
 
     def test_div_tag_mixed(self):

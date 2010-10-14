@@ -19,9 +19,6 @@ Uses a markup converter to transform TikiWiki syntax to MediaWiki syntax.
 # TODO: warnings for unrecognized {DIV}s (with inline styling)
 #       default right now to just turn into <div></div>
 # TODO: Add non-localizable document support (separate bug ######)
-# TODO: support for TAG strike (found in some English document)
-# TODO: exclude translations of English documents that are explicitly
-#       migrated. E.g. home page, dynamic variables, ...
 
 import logging
 import re
@@ -56,6 +53,7 @@ WARNINGS = {'no_parent': 'This document is missing its parent.',
             'skip': 'This document is not being migrated.',
             'same_content':
               'This document has the same content an existing revision (%s).',
+            '<table>': 'This document contains a table.',
             '<script>': 'This document contains <script> tags.',
             '<style>': 'This document contains <style> tags.'}
 
@@ -281,6 +279,11 @@ def get_comment_reviewer(comment):
     return (comment, anon)
 
 
+CHECK_CONTENT_PATTERNS = {
+    '<table>': re.compile('^\|\|', re.MULTILINE),
+}
+
+
 def check_content(content):
     """Returns warnings regarding potentially legacy TikiWiki syntax."""
     warnings = []
@@ -288,7 +291,28 @@ def check_content(content):
         if s in content:
             warnings.append(WARNINGS[s])
 
+    for k, v in CHECK_CONTENT_PATTERNS.iteritems():
+        if v.search(content):
+            warnings.append(WARNINGS[k])
+
     return warnings
+
+
+def get_based_on(document, revision):
+    if document.parent:
+        if document.parent.current_revision:
+            return document.parent.current_revision
+        older_parent_revisions = document.parent.revisions.filter(
+            created__lte=revision.created,
+            is_approved=True).order_by('-created')
+        if older_parent_revisions.exists():
+            return older_parent_revisions[0]
+    previous_revisions = document.revisions.filter(
+        created__lte=revision.created,
+        is_approved=True).order_by('-created')
+    if previous_revisions.exists():
+        return previous_revisions[0]
+    return None
 
 
 def create_revision(td, document, content, is_approved=False):
@@ -309,6 +333,7 @@ def create_revision(td, document, content, is_approved=False):
                         keywords=keywords, created=created, reviewed=reviewed,
                         comment=comment, is_approved=is_approved,
                         reviewer=reviewer, creator=creator)
+    revision.based_on = get_based_on(document, revision)
     revision.save()
     return revision
 

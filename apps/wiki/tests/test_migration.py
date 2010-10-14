@@ -5,12 +5,8 @@ from nose.tools import eq_
 
 from sumo.models import WikiPage
 from sumo.tests import TestCase
-from wiki.management.commands.migrate_kb import (
-    create_document, create_revision, get_parent_lang, get_locale, get_slug,
-    get_title_is_approved, get_firefox_versions, create_document_metadata,
-    get_category, check_content, get_comment_reviewer, ANONYMOUS_USER_NAME,
-    fetch_content_templates, create_template, convert_content)
-from wiki.tests import document
+from wiki.management.commands.migrate_kb import *
+from wiki.tests import document, revision
 
 
 class HelpersNoFixtures(TestCase):
@@ -34,12 +30,13 @@ class HelpersNoFixtures(TestCase):
                      u'\u0647\u0627'))
 
     def test_check_content(self):
-        """TODO"""
-        raise SkipTest
-
-    def test_convert_content(self):
-        """TODO: check a bunch of things are migrated correctly."""
-        raise SkipTest
+        """Some warnings from check_content"""
+        content = 'something\n<script>evil();</script>'
+        assert WARNINGS['<script>'] in check_content(content)
+        content = 'some\n<style>body {display: none;}</style>'
+        assert WARNINGS['<style>'] in check_content(content)
+        content = 'this\n||is|a|\ntable||'
+        assert WARNINGS['<table>'] in check_content(content)
 
 
 def create_extra_tables():
@@ -224,14 +221,15 @@ class HelpersFixtures(TestCase):
     def test_create_document_translation(self):
         """Create a document that's a translation of another document."""
         td = WikiPage.objects.get(page_id=5965)
-        d = create_document(td)
+        d, _, _ = create_document(td)
         trans_td = WikiPage.objects.get(page_id=6234)
-        trans_d = create_document(trans_td)[0]
+        trans_d, r, _ = create_document(trans_td)
         eq_('Eliminare i cookie', trans_d.title)
         eq_('it', trans_d.locale)
-        d, l = get_parent_lang(trans_td.page_id)
+        _, l = get_parent_lang(trans_td.page_id)
         eq_(d, trans_d.parent)
         eq_('it', l)
+        eq_(d.current_revision, get_based_on(trans_d, r))
 
     def test_document_warnings_default(self):
         """TODO: test some basic warnings"""
@@ -251,6 +249,17 @@ class HelpersFixtures(TestCase):
         eq_(ANONYMOUS_USER_NAME, r.creator.username)
         eq_('Chris_Ilias', r.reviewer.username)
         eq_(False, r.is_approved)
+        eq_(None, r.based_on)
+
+    def test_create_revision_based_on(self):
+        td = WikiPage.objects.get(title='Installing Firefox')
+        d = document()
+        d.save()
+        r = create_revision(td, d, convert_content(td.content)[0])
+        r.is_approved = True
+        r.save()
+        new_r = revision(document=d)
+        eq_(r, get_based_on(d, new_r))
 
     def test_fetch_content_templates(self):
         """Content templates are properly fetched into a dict."""
