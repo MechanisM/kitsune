@@ -92,15 +92,7 @@ def get_locale(lang):
                  else settings.WIKI_DEFAULT_LANGUAGE)
 
 
-def get_parent_lang(page_id):
-    """Returns the migrated English Document of a WikiPage, if found.
-
-    Assumptions:
-        * the corresponding English Document for the WikiPage exists, i.e.
-          was already migrated
-        * every document is translated from English
-
-    """
+def get_translations(page_id):
     c = connection.cursor()
     c.execute("""
         SELECT
@@ -115,16 +107,29 @@ def get_parent_lang(page_id):
             AND t1.type = "wiki page"
             AND t1.objId = %s""", [page_id])
     translations = []
-    parent_id = page_id
     while True:
         translation = c.fetchone()
         if not translation:
             break
-        elif int(translation[0]) == page_id:
+        translations.append(translation)
+    return translations
+
+def get_parent_lang(page_id):
+    """Returns the migrated English Document of a WikiPage, if found.
+
+    Assumptions:
+        * the corresponding English Document for the WikiPage exists, i.e.
+          was already migrated
+        * every document is translated from English
+
+    """
+    parent_id = page_id
+    translations = get_translations(page_id)
+    for translation in translations:
+        if int(translation[0]) == page_id:
             translated_locale = get_locale(translation[1])
         elif translation[1] == 'en':
             parent_id = int(translation[0])
-        translations.append(translation)
 
     if parent_id != page_id:
         # get the parent tiki document
@@ -204,6 +209,9 @@ TIKI_CATEGORY_IDS = {
 }
 
 
+skipped_en_document_ids = []
+
+
 def get_category(td):
     # TODO: finalize list of documents (TIKI_CATEGORY)
     #       according to Cheng/Michael/Matthew's responses
@@ -223,12 +231,21 @@ def get_category(td):
         for k, docs in TIKI_CATEGORY.iteritems():
             if title in docs:
                 return k
+        skipped_en_document_ids.append(td.page_id)
         return 0
     # For translations, check parent's category and use that.
     parent_info = get_parent_lang(td.page_id)
     if parent_info:
         parent, _ = parent_info
         return parent.category
+    else:
+        translations = get_translations(td.page_id)
+        parent_id = None
+        for translation in translations:
+            if translation[1] == 'en':
+                parent_id = int(translation[0])
+        if parent_id in skipped_en_document_ids:
+            return 0
     # Remaining translations default to Troubleshooting
     return 1
 
