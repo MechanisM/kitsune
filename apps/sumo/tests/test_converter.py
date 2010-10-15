@@ -213,7 +213,7 @@ class TestConverter(TestCase):
     def test_tag_strike(self):
         """strike tag works."""
         content = 'And {TAG(tag=strike)}one, two three... out{TAG}!'
-        expected = 'And <strike>one, two three... out</strike>!'
+        expected = 'And <s>one, two three... out</s>!'
         eq_(expected, converter.parse(content)[0])
 
     def test_div_tag_mixed(self):

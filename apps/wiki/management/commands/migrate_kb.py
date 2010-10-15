@@ -114,6 +114,7 @@ def get_translations(page_id):
         translations.append(translation)
     return translations
 
+
 def get_parent_lang(page_id):
     """Returns the migrated English Document of a WikiPage, if found.
 
@@ -625,12 +626,13 @@ class Command(NoArgsCommand):
 
         # Create the documents
         document_offset = 0
+        total_documents = WikiPage.objects.count()
         documents = self.fetch_documents(self.max_documents, document_offset)
         document_counter = 0
         document_i = 0
         while documents and document_counter <= self.max_total_documents:
-            percent = document_counter * 100 / self.max_total_documents
-            if not document_counter % (self.max_total_documents / 10):
+            percent = document_counter * 100 / total_documents
+            if not percent % 10:
                 print u'%s percent done.' % percent
 
             try:

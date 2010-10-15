@@ -382,7 +382,7 @@ def get_tag_openers(tag, pda):
     if tag == 'sup':  # sup dawg?
         return '<sup>'
     elif tag == 'strike':
-        return '<strike>'
+        return '<s>'
     elif tag != 'kbd':
         pda.warnings.append('Unrecognized tag (%s).' % tag)
     return '{key '
@@ -392,7 +392,7 @@ def get_tag_closers(tag, pda):
     if tag == 'sup':
         return '</sup>'
     elif tag == 'strike':
-        return '</strike>'
+        return '</s>'
     return '}'
 
 
