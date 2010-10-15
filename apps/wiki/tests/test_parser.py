@@ -165,13 +165,6 @@ class TestWikiTemplate(TestCase):
         py_doc = pq(p.parse('[[T:test]]', locale='fr'))
         eq_('French content', py_doc.text())
 
-    def test_template_not_exist(self):
-        """If template does not exist in set locale or English."""
-        p = WikiParser()
-        doc = pq(p.parse('[[T:test]]', locale='fr'))
-        eq_('The template "test" does not exist or has no approved revision.',
-            doc.text())
-
     def test_template_locale_fallback(self):
         """If localized template does not exist, fall back to English."""
         _, p = doc_parse_markup('English content', '[[Template:test]]')
