@@ -19,6 +19,8 @@ Uses a markup converter to transform TikiWiki syntax to MediaWiki syntax.
 # TODO: warnings for unrecognized {DIV}s (with inline styling)
 #       default right now to just turn into <div></div>
 # TODO: Add non-localizable document support (separate bug ######)
+# TODO: metadata is added twice in some cases
+# TODO: links to new document should contain locale
 
 import logging
 import re
@@ -82,7 +84,7 @@ def get_title_is_approved(title):
 
 def get_slug(title):
     """Slugify a documment title"""
-    return title  # Agreed to just use the title as the slug
+    return title.replace('/', ' ')  # Agreed to just use the title as the slug
 
 
 def get_locale(lang):
@@ -258,7 +260,7 @@ def get_firefox_versions(td):
     versions = CategoryObject.objects.filter(
         categId__in=TIKI_CATEGORY_MAP.keys(),
         catObjectId__in=obj_ids)
-    return [TIKI_CATEGORY_MAP[v.categId] for v in versions]
+    return set([TIKI_CATEGORY_MAP[v.categId] for v in versions])
 
 
 def get_operating_systems(td):
