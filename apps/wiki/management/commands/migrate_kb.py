@@ -78,7 +78,7 @@ def get_title_is_approved(title):
     # No surrounding whitespace, please
     title = title.strip()
     if title.startswith('*'):
-        return (False, title[1:])
+        return (False, title[1:].strip())
     return (True, title)
 
 
@@ -265,7 +265,7 @@ def get_firefox_versions(td):
 
 def get_operating_systems(td):
     """Just set all articles to Windows, Mac and Linux"""
-    return [1, 2, 3]  # IDs for Windows, Mac and Linux
+    return set([1, 2, 3])  # IDs for Windows, Mac and Linux
 
 
 def get_comment_reviewer(comment):
@@ -632,10 +632,12 @@ class Command(NoArgsCommand):
         documents = self.fetch_documents(self.max_documents, document_offset)
         document_counter = 0
         document_i = 0
+        printed_last_percent = 0
         while documents and document_counter <= self.max_total_documents:
             percent = document_counter * 100 / total_documents
-            if not percent % 10:
+            if not percent % 10 and printed_last_percent != percent:
                 print u'%s percent done.' % percent
+                printed_last_percent = percent
 
             try:
                 tiki_document = documents[document_i]
