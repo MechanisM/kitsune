@@ -632,12 +632,12 @@ class Command(NoArgsCommand):
         documents = self.fetch_documents(self.max_documents, document_offset)
         document_counter = 0
         document_i = 0
-        printed_last_percent = 0
+        last_percent = 0
         while documents and document_counter <= self.max_total_documents:
             percent = document_counter * 100 / total_documents
             if not percent % 10 and printed_last_percent != percent:
                 print u'%s percent done.' % percent
-                printed_last_percent = percent
+                last_percent = percent
 
             try:
                 tiki_document = documents[document_i]
