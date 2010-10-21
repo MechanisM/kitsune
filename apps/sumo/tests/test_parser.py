@@ -170,7 +170,7 @@ class TestWikiParser(TestCase):
             self.p.parse('<showfor>smoo</showfor>').replace('\n', ''))
 
     def test_external_irc_links(self):
-        eq_(u'<p><a href="irc://irc.mozilla.org" rel="nofollow">'
+        eq_(u'<p><a href="irc://irc.mozilla.org">'
             u'#sumo irc channel</a>\n</p>',
             self.p.parse('[irc://irc.mozilla.org #sumo irc channel]'))
 

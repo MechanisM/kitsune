@@ -19,8 +19,6 @@ Uses a markup converter to transform TikiWiki syntax to MediaWiki syntax.
 # TODO: warnings for unrecognized {DIV}s (with inline styling)
 #       default right now to just turn into <div></div>
 # TODO: Add non-localizable document support (separate bug ######)
-# TODO: metadata is added twice in some cases
-# TODO: links to new document should contain locale
 
 import logging
 import re
@@ -55,6 +53,7 @@ WARNINGS = {'no_parent': 'This document is missing its parent.',
             'skip': 'This document is not being migrated.',
             'same_content':
               'This document has the same content an existing revision (%s).',
+            'empty_content': 'This document was skipped as it has no content.',
             '<table>': 'This document contains a table.',
             '<script>': 'This document contains <script> tags.',
             '<style>': 'This document contains <style> tags.'}
@@ -180,7 +179,7 @@ TIKI_CATEGORY = {
         'measuring knowledge base success',
         'localizing firefox support',
         'helping with forum support',
-        'how to contribute',  # TODO: needs custom migration
+        'how to contribute',  # TODO: needs manual migration
         'how we are different',
         'improving articles',
         'helping firefox users on twitter',
@@ -214,15 +213,15 @@ TIKI_CATEGORY_IDS = {
 skipped_en_document_ids = []
 
 
-def get_category(td):
-    # TODO: finalize list of documents (TIKI_CATEGORY)
-    #       according to Cheng/Michael/Matthew's responses
+def get_category(td, translations):
     tiki_objects = TikiObject.objects.filter(type='wiki page', itemId=td.title)
     obj_ids = [t_o.objectId for t_o in tiki_objects]
     categories = CategoryObject.objects.filter(
         categId__in=TIKI_CATEGORY_IDS.keys(), catObjectId__in=obj_ids)
     cat_ids = [c.categId for c in categories]
-    if 1 in cat_ids or 3 in cat_ids:  # Staging and KB
+    # For non-English documents, we don't migrate all staging copies
+    locale = get_locale(td.lang)
+    if 1 in cat_ids or (3 in cat_ids and locale == 'en-US'):  # Staging and KB
         return 1  # Troubleshooting
 
     if 7 in cat_ids or 24 in cat_ids:
@@ -236,7 +235,6 @@ def get_category(td):
         skipped_en_document_ids.append(td.page_id)
         return 0
     # For translations, check parent's category and use that.
-    translations = get_translations(td.page_id)
     parent_info = get_parent_lang(translations, td.page_id)
     if parent_info:
         parent, _ = parent_info
@@ -248,6 +246,18 @@ def get_category(td):
                 parent_id = int(translation[0])
         if parent_id in skipped_en_document_ids:
             return 0
+        # XXX: This part has only been ad-hoc tested
+        # Skip if there is no parent and
+        #       (it's not in KB but it's not staging
+        #        OR it's a staging article which doesn't have a KB copy)
+        if not parent_id:
+            is_approved, title = get_title_is_approved(td.title)
+            if not (is_approved or 3 in cat_ids):  # not kb, not staging
+                return 0
+            elif is_approved and not WikiPage.objects.filter(
+                lang=td.lang, title=title).exists():
+                return 0
+
     # Remaining translations default to Troubleshooting
     return 1
 
@@ -382,8 +392,13 @@ def create_document(td, verbosity=1):
 
     # Check for duplicate content and bail if there's already some
     content, warnings = convert_content(td.content)
+    if not content:  # Why should I bother to migrate this?
+        if verbosity > 1:
+            warnings.append(WARNINGS['empty_content'])
+        return (None, None, warnings)
     same_content_revs = Revision.objects.filter(content=content,
                                                 document__locale=locale)
+    translations = get_translations(td.page_id)
     if same_content_revs.exists():
         if verbosity > 1:
             warnings.append(WARNINGS['same_content'] % same_content_revs[0].id)
@@ -392,14 +407,13 @@ def create_document(td, verbosity=1):
     if locale == settings.WIKI_DEFAULT_LANGUAGE:
         parent, translated_locale = (None, settings.WIKI_DEFAULT_LANGUAGE)
     else:
-        translations = get_translations(td.page_id)
         parent_info = get_parent_lang(translations, td.page_id)
         if parent_info:
             parent, translated_locale = parent_info
         else:
             parent = None
             translated_locale = locale
-    category = get_category(td)
+    category = get_category(td, translations)
     if not category:  # Skip this
         warnings.append(WARNINGS['skip'])
     if not category or category == -1:  # -1 doesn't show warning
@@ -502,6 +516,10 @@ def create_template(content_template):
 
 def create_document_metadata(document, tiki_document):
     """Look up metadata for the document, create it and attach it."""
+    # if there is any fxver/version info added, don't add it again
+    if document.firefox_versions.exists():
+        return False
+
     fxver_ids = get_firefox_versions(tiki_document)
     fxvers = [FirefoxVersion(item_id=id) for id in fxver_ids]
     document.firefox_versions.add(*fxvers)

@@ -147,13 +147,13 @@ class HelpersFixtures(TestCase):
     def test_get_category_english(self):
         """Category for english articles."""
         td = WikiPage.objects.get(page_id=2)
-        eq_(2, get_category(td))
+        eq_(2, get_category(td, get_translations(2)))
 
         td = WikiPage.objects.get(page_id=5965)
-        eq_(1, get_category(td))
+        eq_(1, get_category(td, get_translations(5965)))
 
         td.title = 'group permissions'
-        eq_(3, get_category(td))
+        eq_(3, get_category(td, get_translations(5965)))
 
     def test_get_category_translation(self):
         """Category for translated articles."""
@@ -161,10 +161,11 @@ class HelpersFixtures(TestCase):
         td = WikiPage.objects.get(page_id=5965)
         d, _, _ = create_document(td)
         td = WikiPage.objects.get(page_id=6234)
-        eq_(1, get_category(td))
+        translations = get_translations(td.page_id)
+        eq_(1, get_category(td, translations))
         d.category = 3  # pretend this is 3
         d.save()
-        eq_(3, get_category(td))
+        eq_(3, get_category(td, translations))
 
     def test_get_firefox_versions(self):
         """Returns a list of firefox version IDs"""
@@ -219,6 +220,11 @@ class HelpersFixtures(TestCase):
         os_ids.sort()
         eq_([2, 3], fxver_ids)
         eq_([1, 2, 3], os_ids)
+
+        # check that adding metadata again doesn't get me the data twice
+        create_document_metadata(d, td)
+        eq_(2, d.firefox_version_set.count())
+        eq_(3, d.operating_system_set.count())
 
     def test_create_document_translation(self):
         """Create a document that's a translation of another document."""
