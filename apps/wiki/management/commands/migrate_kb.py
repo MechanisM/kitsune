@@ -117,7 +117,7 @@ def get_translations(page_id):
     return translations
 
 
-def get_parent_lang(page_id):
+def get_parent_lang(translations, page_id):
     """Returns the migrated English Document of a WikiPage, if found.
 
     Assumptions:
@@ -127,7 +127,6 @@ def get_parent_lang(page_id):
 
     """
     parent_id = page_id
-    translations = get_translations(page_id)
     for translation in translations:
         if int(translation[0]) == page_id:
             translated_locale = get_locale(translation[1])
@@ -237,12 +236,12 @@ def get_category(td):
         skipped_en_document_ids.append(td.page_id)
         return 0
     # For translations, check parent's category and use that.
-    parent_info = get_parent_lang(td.page_id)
+    translations = get_translations(td.page_id)
+    parent_info = get_parent_lang(translations, td.page_id)
     if parent_info:
         parent, _ = parent_info
         return parent.category
     else:
-        translations = get_translations(td.page_id)
         parent_id = None
         for translation in translations:
             if translation[1] == 'en':
@@ -393,7 +392,8 @@ def create_document(td, verbosity=1):
     if locale == settings.WIKI_DEFAULT_LANGUAGE:
         parent, translated_locale = (None, settings.WIKI_DEFAULT_LANGUAGE)
     else:
-        parent_info = get_parent_lang(td.page_id)
+        translations = get_translations(td.page_id)
+        parent_info = get_parent_lang(translations, td.page_id)
         if parent_info:
             parent, translated_locale = parent_info
         else:
@@ -635,7 +635,7 @@ class Command(NoArgsCommand):
         last_percent = 0
         while documents and document_counter <= self.max_total_documents:
             percent = document_counter * 100 / total_documents
-            if not percent % 10 and printed_last_percent != percent:
+            if not percent % 10 and last_percent != percent:
                 print u'%s percent done.' % percent
                 last_percent = percent
 

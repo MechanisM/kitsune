@@ -122,14 +122,16 @@ class HelpersFixtures(TestCase):
 
     def test_get_parent_english(self):
         """Returns None for English"""
-        d = get_parent_lang(5965)
+        translations = get_translations(5965)
+        d = get_parent_lang(translations, 5965)
         eq_(None, d)
 
     def test_get_parent_translation(self):
         """Returns the migrated English version for a translation"""
         td = WikiPage.objects.get(page_id=5965)
         parent = create_document(td)[0]
-        d, l = get_parent_lang(6234)
+        translations = get_translations(6234)
+        d, l = get_parent_lang(translations, 6234)
         eq_(parent, d)
         eq_('it', l)
 
@@ -138,7 +140,8 @@ class HelpersFixtures(TestCase):
         td = WikiPage.objects.exclude(page_id=5965)[0]
         td.lang = 'fr'  # Set the locale so it's considered a translation
         td.save()
-        d = get_parent_lang(td.page_id)
+        translations = get_translations(td.page_id)
+        d = get_parent_lang(translations, td.page_id)
         eq_(None, d)
 
     def test_get_category_english(self):
@@ -167,8 +170,7 @@ class HelpersFixtures(TestCase):
         """Returns a list of firefox version IDs"""
         td = WikiPage.objects.get(page_id=5965)
         versions = get_firefox_versions(td)
-        versions.sort()
-        eq_([2, 3], versions)
+        eq_(set([2, 3]), versions)
 
     def test_get_comment_reviewer_empty_comment(self):
         """Empty comment, anonymous user."""
@@ -226,7 +228,8 @@ class HelpersFixtures(TestCase):
         trans_d, r, _ = create_document(trans_td)
         eq_('Eliminare i cookie', trans_d.title)
         eq_('it', trans_d.locale)
-        _, l = get_parent_lang(trans_td.page_id)
+        translations = get_translations(trans_td.page_id)
+        _, l = get_parent_lang(translations, trans_td.page_id)
         eq_(d, trans_d.parent)
         eq_('it', l)
         eq_(d.current_revision, get_based_on(trans_d, r))
