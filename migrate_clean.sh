@@ -4,11 +4,11 @@ before="$(date +%s)"
 case $1 in
 [0-3]*)
     echo Chosen verbosity: $1
-    mysql k_10_14 < clean_up.sql && ./manage.py migrate_kb --verbosity $1
+    mysql k_10_18 < clean_up.sql && ./manage.py migrate_kb --verbosity $1
     ;;
 *)
     echo Using default verbosity: 2
-    mysql k_10_14 < clean_up.sql && ./manage.py migrate_kb --verbosity 2
+    mysql k_10_18 < clean_up.sql && ./manage.py migrate_kb --verbosity 2
     ;;
 esac
 after="$(date +%s)"
