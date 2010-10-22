@@ -129,7 +129,7 @@ class Document(ModelBase, BigVocabTaggableMixin):
 
     # Is this document a template or not?
     # TODO: Localizing templates does not allow changing titles
-    is_template = models.BooleanField(default=False, editable=False,
+    is_template = models.BooleanField(default=True, editable=False,
                                       db_index=True)
     # Is this document localizable or not?
     is_localizable = models.BooleanField(default=True, db_index=True)
