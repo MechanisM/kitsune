@@ -37,6 +37,7 @@ from wiki.models import (Document, Revision, CATEGORIES,
                          FirefoxVersion, OperatingSystem, SlugCollision)
 from sumo.converter import TikiMarkupConverter
 from sumo.models import WikiPage, CategoryObject, TikiObject
+from sumo import ProgrammingError
 
 
 log = logging.getLogger('k.migrate')
@@ -336,11 +337,6 @@ def get_based_on(document, revision):
             is_approved=True).order_by('-created')
         if older_parent_revisions.exists():
             return older_parent_revisions[0]
-    previous_revisions = document.revisions.filter(
-        created__lte=revision.created,
-        is_approved=True).order_by('-created')
-    if previous_revisions.exists():
-        return previous_revisions[0]
     return None
 
 
@@ -363,7 +359,14 @@ def create_revision(td, document, content, is_approved=False):
                         comment=comment, is_approved=is_approved,
                         reviewer=reviewer, creator=creator)
     revision.based_on = get_based_on(document, revision)
-    revision.save()
+    try:
+        revision.save()
+    except ProgrammingError:
+        print 'ProgrammingError: #%s [%s] %s based on #%s [%s] %s.' % (
+            revision.document.id,
+            revision.document.locale, revision.document.title,
+            revision.based_on.id, revision.based_on.document.locale,
+            revision.based_on.document.title)
     return revision
 
 
@@ -389,6 +392,11 @@ def create_document(td, verbosity=1):
     slug = get_slug(title)
 
     locale = get_locale(td.lang)
+    # English articles are localizable, translations are not.
+    if locale == settings.WIKI_DEFAULT_LANGUAGE:
+        is_localizable = True
+    else:
+        is_localizable = False
 
     # Check for duplicate content and bail if there's already some
     content, warnings = convert_content(td.content)
@@ -421,7 +429,8 @@ def create_document(td, verbosity=1):
 
     # Create the document first
     document = Document(title=title, slug=slug, locale=locale,
-                        parent=parent, category=category)
+                        parent=parent, category=category,
+                        is_localizable=is_localizable)
     try:
         document.save()
 
@@ -478,6 +487,11 @@ def create_template(content_template):
     slug = get_slug(title)
     category = CATEGORIES[3][0]  # Templates category
     locale = get_locale(content_template['locale'])
+    # English articles are localizable, translations are not.
+    if locale == settings.WIKI_DEFAULT_LANGUAGE:
+        is_localizable = True
+    else:
+        is_localizable = False
     try:
         parent = Document.objects.get(title=title,
                                       locale=settings.WIKI_DEFAULT_LANGUAGE)
@@ -486,7 +500,8 @@ def create_template(content_template):
 
     # Create the template document first
     document = Document(title=title, slug=slug, locale=locale,
-                        parent=parent, category=category)
+                        parent=parent, category=category,
+                        is_localizable=is_localizable)
     #if 'toparticles' in title:
     #    import pdb; pdb.set_trace()
     document.save()
