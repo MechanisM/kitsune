@@ -281,6 +281,12 @@ class Document(ModelBase, BigVocabTaggableMixin):
         # we make here, so don't worry:
         self._clean_category()
 
+        # Can't translate if not localizable
+        if self.parent and not self.parent.is_localizable:
+            raise ValidationError('This document\'s parent "[%s] %s" is not '
+                                  'localizable.' % (
+                                  self.parent.locale, self.parent.title))
+
         super(Document, self).save(*args, **kwargs)
 
         # Make redirects if there's an approved revision and title or slug
