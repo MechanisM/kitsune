@@ -269,6 +269,20 @@ class HelpersFixtures(TestCase):
         r.save()
         new_r = revision(document=d)
         eq_(r, get_based_on(d, new_r))
+        new_r.save()
+
+        # translate to French, based on English
+        d2 = document(locale='fr', parent=d)
+        d2.save()
+        new_r2 = revision(document=d2)
+        eq_(r, get_based_on(d2, new_r2))
+
+        # no current revision for English? No problem, just check approved ones
+        new_r.is_approved = True
+        new_r.save()
+        d.current_revision = None
+        d.save()
+        eq_(new_r, get_based_on(d2, new_r2))
 
     def test_fetch_content_templates(self):
         """Content templates are properly fetched into a dict."""

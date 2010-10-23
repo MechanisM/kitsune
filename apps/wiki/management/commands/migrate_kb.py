@@ -337,6 +337,12 @@ def get_based_on(document, revision):
             is_approved=True).order_by('-created')
         if older_parent_revisions.exists():
             return older_parent_revisions[0]
+    if document.locale == settings.WIKI_DEFAULT_LANGUAGE:
+        previous_revisions = document.revisions.filter(
+            created__lte=revision.created,
+            is_approved=True).order_by('-created')
+        if previous_revisions.exists():
+            return previous_revisions[0]
     return None
 
 
