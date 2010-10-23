@@ -538,7 +538,8 @@ def create_template(content_template):
 def create_document_metadata(document, tiki_document):
     """Look up metadata for the document, create it and attach it."""
     # if there is any fxver/version info added, don't add it again
-    if document.firefox_versions.exists():
+    if document.firefox_versions.exists() or \
+       document.operating_systems.exists():
         return False
 
     fxver_ids = get_firefox_versions(tiki_document)
