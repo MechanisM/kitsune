@@ -601,12 +601,12 @@ def fetch_content_templates():
 
 def fetch_en_documents(count, offset):
     return WikiPage.objects.filter(lang='en').order_by(
-        'page_id')[offset:offset + count]
+        '-lastModif')[offset:offset + count]
 
 
 def fetch_rest_documents(count, offset):
     return WikiPage.objects.exclude(lang='en').order_by(
-        'page_id')[offset:offset + count]
+        '-lastModif')[offset:offset + count]
 
 
 class Command(NoArgsCommand):

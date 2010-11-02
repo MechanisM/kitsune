@@ -402,10 +402,10 @@ class TestConverter(TestCase):
                  '(button menu).')
         assert found in received[1], '"%s" not in "%s"' % (found, received[1])
 
-    def test_maketoc_remove(self):
-        """{maketoc} is removed, including surrounding whitepsace."""
-        content = '\n\n {maketoc}\n  \n\n'
-        expected = '\n\n'
+    def test_maketoc_to_toc(self):
+        """{maketoc} is converted and surrounding whitespace is stripped."""
+        content = 'some text\n\n {maketoc} \n more text'
+        expected = 'some text\n__TOC__\n more text'
         eq_(expected, converter.convert(content))
 
     def test_dynvars_remove(self):

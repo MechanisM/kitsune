@@ -157,7 +157,7 @@ CONVERTER_PATTERNS = (
      REDIRECTOR_REGEX),
     (r'%{3,}', '<br/>'),
     (r'\^(?P<text>[^\^]*?)\^', '{note}\g<text>{/note}'),
-    (r'(\s)*\{maketoc\}(\s)*', '\n\n'),
+    (r'\n* *\{maketoc\} *\n*', '\n__TOC__\n'),
     (r'\{\s*DYNVARS\s*\(?[^\}\{\(\)]*?\s*\)?\s*\/?\s*\}', ' '),
     (r'\{\s*ANAME\s*\([^\}\{]*?\}.*?\{[^\(\)]*?ANAME[^\(\)]*?\}', ' '),
     (r'\{\s*content\s*(idlabel|label|id)\s*=\s*([^\}\{]*?)\s*\}',
