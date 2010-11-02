@@ -634,12 +634,12 @@ class Command(NoArgsCommand):
             warnings = create_template(template)[-1]
             for w in warnings:
                 log.debug(
-                    'Warning: %s -- (%s) Template:%s | #%s' % (
+                    u'Warning: %s -- (%s) Template:%s | #%s' % (
                     w, template['locale'], template['label'], template['id']))
 
         def print_template_info(template):
             if options['verbosity'] > 1:
-                print 'Processing (%s) Template:%s | #%s...' % (
+                print u'Processing (%s) Template:%s | #%s...' % (
                     template['locale'], template['label'],
                     template['id'])
 
