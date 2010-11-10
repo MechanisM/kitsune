@@ -49,6 +49,7 @@ RE_REVIEWER = re.compile('\[?approved by ([^\]]+?)\]')
 TIKI_CATEGORY_MAP = {
     14: 3,  # Firefox 3.0
     25: 2,  # Firefox 3.5-3.6
+    26: 6,  # Mobile 1.1
 }
 WARNINGS = {'no_parent': 'This document is missing its parent.',
             'skip': 'This document is not being migrated.',
@@ -157,6 +158,7 @@ TIKI_CATEGORY = {
         'live chat closed',
         'terms of service',
         'ask a question',
+        'get help with firefox 4 beta',
         ],
     2: [  # How to contribute
         # TODO: make non-localizable
@@ -194,7 +196,6 @@ TIKI_CATEGORY = {
         'approving articles and edits',
         'adding screenshots',
         'adding screencasts',
-        # TODO: Windows start page redirect to start page
         ],
 }
 
@@ -270,8 +271,9 @@ def get_firefox_versions(td):
     versions = CategoryObject.objects.filter(
         categId__in=TIKI_CATEGORY_MAP.keys(),
         catObjectId__in=obj_ids)
-    return set([TIKI_CATEGORY_MAP[v.categId] for v in versions])
-
+    versions = [TIKI_CATEGORY_MAP[v.categId] for v in versions]
+    versions.append(1)  # All articles are for Firefox 4
+    return set(versions)
 
 def get_operating_systems(td):
     """Just set all articles to Windows, Mac and Linux"""

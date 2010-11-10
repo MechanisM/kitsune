@@ -171,7 +171,7 @@ class HelpersFixtures(TestCase):
         """Returns a list of firefox version IDs"""
         td = WikiPage.objects.get(page_id=5965)
         versions = get_firefox_versions(td)
-        eq_(set([2, 3]), versions)
+        eq_(set([1, 2, 3]), versions)
 
     def test_get_comment_reviewer_empty_comment(self):
         """Empty comment, anonymous user."""
@@ -212,18 +212,18 @@ class HelpersFixtures(TestCase):
         td = WikiPage.objects.get(title='Deleting cookies')
         d, r, _ = create_document(td)
         create_document_metadata(d, td)
-        eq_(2, d.firefox_version_set.count())
+        eq_(3, d.firefox_version_set.count())
         eq_(3, d.operating_system_set.count())
         fxver_ids = [i.item_id for i in d.firefox_version_set.all()]
         fxver_ids.sort()
         os_ids = [i.item_id for i in d.operating_system_set.all()]
         os_ids.sort()
-        eq_([2, 3], fxver_ids)
+        eq_([1, 2, 3], fxver_ids)
         eq_([1, 2, 3], os_ids)
 
         # check that adding metadata again doesn't get me the data twice
         create_document_metadata(d, td)
-        eq_(2, d.firefox_version_set.count())
+        eq_(3, d.firefox_version_set.count())
         eq_(3, d.operating_system_set.count())
 
     def test_create_document_translation(self):
