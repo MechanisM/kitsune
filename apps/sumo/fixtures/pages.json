@@ -392,6 +392,14 @@
         }
     },
     {
+        "pk": 16944,
+        "model": "sumo.categoryobject",
+        "fields": {
+            "catObjectId": 27081,
+            "categId": 18
+        }
+    },
+    {
         "pk": 29978,
         "model": "sumo.tikiobject",
         "fields": {

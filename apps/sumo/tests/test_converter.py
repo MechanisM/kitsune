@@ -328,6 +328,14 @@ class TestConverter(TestCase):
         expected = """'''<span style="color:#123456">Good</span>'''"""
         eq_(expected, converter.parse(content)[0])
 
+    def test_unicode_grrr(self):
+        """~123~"""
+        content_expected = ((u'~123~', u'{'),
+                            (u'~5229~', u'\u146d'),
+                            (u'~99999999~', u'~99999999~'))
+        for content, expected in content_expected:
+            eq_(expected, converter.parse(content)[0])
+
     def test_np(self):
         """~np~...~/np~."""
         # Note: this is, strictly speaking, incorrect.

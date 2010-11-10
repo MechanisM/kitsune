@@ -147,13 +147,16 @@ class HelpersFixtures(TestCase):
     def test_get_category_english(self):
         """Category for english articles."""
         td = WikiPage.objects.get(page_id=2)
-        eq_(2, get_category(td, get_translations(2)))
+        eq_(30, get_category(td, get_translations(2)))
+
+        td = WikiPage.objects.get(page_id=5)
+        eq_(20, get_category(td, get_translations(5)))
 
         td = WikiPage.objects.get(page_id=5965)
-        eq_(1, get_category(td, get_translations(5965)))
+        eq_(10, get_category(td, get_translations(5965)))
 
         td.title = 'group permissions'
-        eq_(3, get_category(td, get_translations(5965)))
+        eq_(40, get_category(td, get_translations(5965)))
 
     def test_get_category_translation(self):
         """Category for translated articles."""
@@ -162,16 +165,37 @@ class HelpersFixtures(TestCase):
         d, _, _ = create_document(td)
         td = WikiPage.objects.get(page_id=6234)
         translations = get_translations(td.page_id)
-        eq_(1, get_category(td, translations))
-        d.category = 3  # pretend this is 3
+        eq_(10, get_category(td, translations))
+        d.category = 30  # pretend this is 3
         d.save()
-        eq_(3, get_category(td, translations))
+        eq_(30, get_category(td, translations))
 
     def test_get_firefox_versions(self):
         """Returns a list of firefox version IDs"""
         td = WikiPage.objects.get(page_id=5965)
-        versions = get_firefox_versions(td)
+        d, _, _ = create_document(td)
+        versions = get_firefox_versions(td, d)
         eq_(set([1, 2, 3]), versions)
+
+        # Add this metadata
+        create_document_metadata(d, td)
+
+        # Now test for a translation
+        td = WikiPage.objects.get(page_id=6234)
+        d, _, _ = create_document(td)
+        versions = get_firefox_versions(td, d)
+        eq_(set([1, 2, 3]), versions)
+
+    def test_get_operating_systems_desktop(self):
+        """Operating systems for a desktop document."""
+        self.test_get_firefox_versions()
+        d = Document.objects.get(locale='en-US')
+        os_ids = set([d_os.item_id for d_os in d.operating_systems.all()])
+        eq_(set([1, 2, 3]), os_ids)
+
+    def test_get_operating_systems_mobile(self):
+        td = WikiPage.objects.get(page_id=5965)
+        eq_(set([4, 5]), get_operating_systems(td, [4]))
 
     def test_get_comment_reviewer_empty_comment(self):
         """Empty comment, anonymous user."""
@@ -301,7 +325,7 @@ class HelpersFixtures(TestCase):
         eq_('Template:optionspreferences', d.title)
         eq_('Template:optionspreferences', d.slug)
         eq_('en-US', d.locale)
-        eq_(4, d.category)
+        eq_(40, d.category)
         eq_(None, d.parent)
         eq_(r, d.current_revision)
         eq_(d, r.document)

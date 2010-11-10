@@ -47,9 +47,9 @@ htmlparser = HTMLParser()
 ANONYMOUS_USER_NAME = 'AnonymousUser'
 RE_REVIEWER = re.compile('\[?approved by ([^\]]+?)\]')
 TIKI_CATEGORY_MAP = {
-    14: 3,  # Firefox 3.0
-    25: 2,  # Firefox 3.5-3.6
-    26: 6,  # Mobile 1.1
+    14: 3,  # Firefox 3.0, fx3
+    25: 2,  # Firefox 3.5-3.6, fx35
+    26: 4,  # Mobile Firefox 4, m4
 }
 WARNINGS = {'no_parent': 'This document is missing its parent.',
             'skip': 'This document is not being migrated.',
@@ -150,7 +150,7 @@ def get_parent_lang(translations, page_id):
 
 
 TIKI_CATEGORY = {
-    3: [  # Administration
+    40: [  # Administration
         'about firefox support',
         'group permissions',
         'introduction to live chat',
@@ -160,7 +160,7 @@ TIKI_CATEGORY = {
         'ask a question',
         'get help with firefox 4 beta',
         ],
-    2: [  # How to contribute
+    30: [  # How to contribute
         # TODO: make non-localizable
         'live chat canned responses',
         'live chat basic support handbook',
@@ -206,6 +206,7 @@ TIKI_CATEGORY_IDS = {
     7: 'Sandbox',
     8: 'Administration',
     9: 'Waiting for review',
+    18: 'Help article',
     20: 'Live chat',
     23: 'HTC',
     24: 'Archive',
@@ -221,23 +222,33 @@ def get_category(td, translations):
     categories = CategoryObject.objects.filter(
         categId__in=TIKI_CATEGORY_IDS.keys(), catObjectId__in=obj_ids)
     cat_ids = [c.categId for c in categories]
-    # For non-English documents, we don't migrate all staging copies
+
+    parent_info = None
     locale = get_locale(td.lang)
-    if 1 in cat_ids or (3 in cat_ids and locale == 'en-US'):  # Staging and KB
-        return 1  # Troubleshooting
+    if locale != 'en-US':
+        parent_info = get_parent_lang(translations, td.page_id)
 
-    if 7 in cat_ids or 24 in cat_ids:
-        return -1  # This means don't even show warning
+    if not parent_info:
+        if 18 in cat_ids:
+            return 20  # How to
 
-    if td.lang == 'en':
-        title = td.title.strip().lower()
-        for k, docs in TIKI_CATEGORY.iteritems():
-            if title in docs:
-                return k
-        skipped_en_document_ids.append(td.page_id)
-        return 0
+        # For non-English documents, we don't migrate all staging copies
+        # For English documents, we migrate staging and KB
+        if 1 in cat_ids or (3 in cat_ids and locale == 'en-US'):
+            return 10  # Troubleshooting
+
+        if 7 in cat_ids or 24 in cat_ids:
+            return -1  # This means don't even show warning
+
+        if locale == 'en-US':
+            title = td.title.strip().lower()
+            for k, docs in TIKI_CATEGORY.iteritems():
+                if title in docs:
+                    return k
+            skipped_en_document_ids.append(td.page_id)
+            return 0
+
     # For translations, check parent's category and use that.
-    parent_info = get_parent_lang(translations, td.page_id)
     if parent_info:
         parent, _ = parent_info
         return parent.category
@@ -250,7 +261,7 @@ def get_category(td, translations):
             return 0
         # XXX: This part has only been ad-hoc tested
         # Skip if there is no parent and
-        #       (it's not in KB but it's not staging
+        #       (it's not in KB nor in staging
         #        OR it's a staging article which doesn't have a KB copy)
         if not parent_id:
             is_approved, title = get_title_is_approved(td.title)
@@ -264,8 +275,11 @@ def get_category(td, translations):
     return 1
 
 
-def get_firefox_versions(td):
+def get_firefox_versions(td, d):
     """Returns a list of integers, the Document's Firefox versions."""
+    if d.parent:
+        return set([fxver.item_id for
+                    fxver in d.parent.firefox_versions.all()])
     tiki_objects = TikiObject.objects.filter(type='wiki page', itemId=td.title)
     obj_ids = [t_o.objectId for t_o in tiki_objects]
     versions = CategoryObject.objects.filter(
@@ -275,8 +289,11 @@ def get_firefox_versions(td):
     versions.append(1)  # All articles are for Firefox 4
     return set(versions)
 
-def get_operating_systems(td):
+
+def get_operating_systems(td, fxver_ids):
     """Just set all articles to Windows, Mac and Linux"""
+    if 4 in fxver_ids:
+        return set([4, 5])  # IDs for Android and Maemo
     return set([1, 2, 3])  # IDs for Windows, Mac and Linux
 
 
@@ -544,11 +561,11 @@ def create_document_metadata(document, tiki_document):
        document.operating_systems.exists():
         return False
 
-    fxver_ids = get_firefox_versions(tiki_document)
+    fxver_ids = get_firefox_versions(tiki_document, document)
     fxvers = [FirefoxVersion(item_id=id) for id in fxver_ids]
     document.firefox_versions.add(*fxvers)
 
-    os_ids = get_operating_systems(tiki_document)
+    os_ids = get_operating_systems(tiki_document, fxver_ids)
     oses = [OperatingSystem(item_id=id) for id in os_ids]
     document.operating_systems.add(*oses)
 

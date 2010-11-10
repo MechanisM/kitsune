@@ -113,6 +113,15 @@ def _external_img_regex(matchobj):
     return '<img src="%s"%s>' % (url, ' '.join(params))
 
 
+def _unichr(matchobj):
+    """Turns ~123~ into unichr(123) = {"""
+    digits = int(matchobj.group('digits'))
+    try:
+        return unichr(digits)
+    except ValueError:
+        return matchobj.group(0)
+
+
 CONVERTER_PATTERNS = (
     # Turns [external|link] into [external link] but not [[internal|links]]
     (r'(?!\[\[)\[(?P<href>[^\]]*?)\|(?P<name>[^\]]*?)\]',
@@ -142,6 +151,7 @@ CONVERTER_PATTERNS = (
     (r'\{PREF\(\)\}(?P<txt>.*?)\{PREF\}', '{pref \g<txt>}'),
     (r'~np~(?P<txt>.*?)~\/np~', '<nowiki>\g<txt></nowiki>'),
     (r'~hs~', '&nbsp;'),
+    (r'~(?P<digits>\d+)~', _unichr),
     (r'~~#(?P<color>\d{3,}):(?P<txt>.*?)~~',
      '<span style="color:#\g<color>">\g<txt></span>'),
     (r'~(h|t)c~(?P<txt>.*?)~\/(h|t)c~', '<!--\g<txt>-->'),
