@@ -17,6 +17,7 @@ New syntax summary:
   * ~tc~ ... ~/tc~ turns into HTML comment <!-- ... -->
                     we don't support this atm afaik
   * ~np~ ... ~/np~ turns into <nowiki> ... </nowiki>
+  * ~hs~ turns into &nbsp;
   * ~hc~ ... ~/hc~ -- HTML comment, turns into <!-- ... -->
   * {img src="img/wiki_up/file.png"} turns into [[Image:file.png]]
   * {REDIRECT(page=<page>)} turns into REDIRECT_CONTENT % '<page>'
@@ -140,6 +141,9 @@ CONVERTER_PATTERNS = (
     (r'\{FILE\(\)\}(?P<txt>.*?)\{FILE\}', '{filepath \g<txt>}'),
     (r'\{PREF\(\)\}(?P<txt>.*?)\{PREF\}', '{pref \g<txt>}'),
     (r'~np~(?P<txt>.*?)~\/np~', '<nowiki>\g<txt></nowiki>'),
+    (r'~hs~', '&nbsp;'),
+    (r'~~#(?P<color>\d{3,}):(?P<txt>.*?)~~',
+     '<span style="color:#\g<color>">\g<txt></span>'),
     (r'~(h|t)c~(?P<txt>.*?)~\/(h|t)c~', '<!--\g<txt>-->'),
     (r'\{SCREENCAST\s*\(\s*file=?\>?\s*(?P<file>.*?)\).*\}',
      '[[Video:\g<file>]]'),

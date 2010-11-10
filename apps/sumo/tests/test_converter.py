@@ -316,6 +316,18 @@ class TestConverter(TestCase):
         expected = '{filepath File > new}'
         eq_(expected, converter.parse(content)[0])
 
+    def test_hs(self):
+        """~hs~."""
+        content = '~hs~Some tex~hs~t here'
+        expected = '&nbsp;Some tex&nbsp;t here'
+        eq_(expected, converter.parse(content)[0])
+
+    def test_span_color(self):
+        """__~~#123456:Good~~__."""
+        content = '__~~#123456:Good~~__'
+        expected = """'''<span style="color:#123456">Good</span>'''"""
+        eq_(expected, converter.parse(content)[0])
+
     def test_np(self):
         """~np~...~/np~."""
         # Note: this is, strictly speaking, incorrect.
