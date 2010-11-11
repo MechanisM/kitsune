@@ -28,6 +28,9 @@ New syntax summary:
 """
 
 # TODO: convert ;: at beginning of line
+# TODO: this: {button {for mac}mac{/for}{for not mac}not mac{/for} etc}
+#       to: {for mac}{button mac}{/for}...
+# TODO: << and >> (single chars) adjacent &nbsp; (scoobidiver's comment in bug)
 
 import re
 from xml.sax.saxutils import quoteattr

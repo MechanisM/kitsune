@@ -413,6 +413,7 @@ def create_document(td, verbosity=1):
     """Create a document from a Tiki document."""
     warnings = []
 
+    # TODO: first-time articles with no staging copy should NOT  be approved
     is_approved, title = get_title_is_approved(td.title)
     slug = get_slug(title)
 
