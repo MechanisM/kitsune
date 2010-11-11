@@ -433,6 +433,14 @@ def create_document(td, verbosity=1):
                                                 document__locale=locale)
     translations = get_translations(td.page_id)
     if same_content_revs.exists():
+        # We migrated staging first?
+        if is_approved and not same_content_revs[0].is_approved:
+            revision = same_content_revs[0]
+            revision.is_approved = True
+            revision.save()
+            document = revision.document
+            document.current_revision = revision
+            document.save()
         if verbosity > 1:
             warnings.append(WARNINGS['same_content'] % same_content_revs[0].id)
         return (None, None, warnings)
