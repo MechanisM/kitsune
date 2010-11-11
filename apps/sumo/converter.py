@@ -129,14 +129,14 @@ CONVERTER_PATTERNS = (
     (r'===(?P<underlined>.*?)===', '<u>\g<underlined></u>'),
     (r'__(?P<bold>.*?)__', "'''\g<bold>'''"),
     # Internal anchors only
-    (r'\(\(\|?(?P<hashlabel>#[^)]*?)\)\)', '[[\g<hashlabel>]]'),
-    # Link + anchor + text, because Tiki is vewwy special
-    (r'\(\((?P<href>[^)]*?)\|(?P<anchor>[^)]*?)\|(?P<name>[^)]*?)\)\)',
-     '[[\g<href>\g<anchor>|\g<name>]]'),
-    # Link + text
-    (r'\(\((?P<href>[^)]*?)\|(?P<name>[^)]*?)\)\)', '[[\g<href>|\g<name>]]'),
+    (r'\(\(\|?(?P<hashlabel>#.*?)\)\)', '[[\g<hashlabel>]]'),
     # Just link
-    (r'\(\((?P<href>[^)]*?)\)\)', '[[\g<href>]]'),
+    (r'\(\((?P<href>[^\|]*?)\)\)', '[[\g<href>]]'),
+    # Link + text
+    (r'\(\((?P<href>[^\|]*?)\|(?P<name>[^\|]*?)\)\)', '[[\g<href>|\g<name>]]'),
+    # Link + anchor + text, because Tiki is vewwy special
+    (r'\(\((?P<href>[^\|]*?)\|(?P<anchor>[^\|]*?)\|(?P<name>[^\|]*?)\)\)',
+     '[[\g<href>\g<anchor>|\g<name>]]'),
     (r'^!!!!!!\s*(?P<heading>.*?)$', '====== \g<heading> ======'),
     (r'^!!!!!\s*(?P<heading>.*?)$', '===== \g<heading> ====='),
     (r'^!!!!\s*(?P<heading>.*?)$', '==== \g<heading> ===='),

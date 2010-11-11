@@ -57,6 +57,13 @@ class TestConverter(TestCase):
         content = '[http://external.link|named]'
         eq_('[http://external.link named]', converter.convert(content))
 
+    def test_internal_link_for(self):
+        content = ('((Page|{DIV(class=win,type=span)}Options{DIV}'
+                   '{DIV(class=noWin,type=span)}Preferences{DIV} window))')
+        expected = ('[[Page|{for win}Options{/for}{for mac,linux}Preferences'
+                    '{/for} window]]')
+        eq_(expected, converter.parse(content)[0])
+
     def test_heading(self):
         content = """!heading 1
                      \n!! heading 2
