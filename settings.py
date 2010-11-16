@@ -419,7 +419,6 @@ SEARCH_RESULTS_PER_PAGE = 10
 # Search default settings
 # comma-separated tuple of included category IDs. Negative IDs are excluded.
 SEARCH_DEFAULT_CATEGORIES = (10, 20)
->>>>>>> Renumber categories and leave some room for future growth.
 SEARCH_SUMMARY_LENGTH = 275
 # because of markup cleanup, search summaries lengths vary quite a bit
 # so we extract longer excerpts and perform truncation to the length above

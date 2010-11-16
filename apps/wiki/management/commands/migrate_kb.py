@@ -272,7 +272,7 @@ def get_category(td, translations):
                 return 0
 
     # Remaining translations default to Troubleshooting
-    return 1
+    return 10
 
 
 def get_firefox_versions(td, d):
