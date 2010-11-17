@@ -432,7 +432,17 @@ def create_document(td, verbosity=1):
         return (None, None, warnings)
     same_content_revs = Revision.objects.filter(content=content,
                                                 document__locale=locale)
-    translations = get_translations(td.page_id)
+    if locale == settings.WIKI_DEFAULT_LANGUAGE:
+        parent, translated_locale = (None, settings.WIKI_DEFAULT_LANGUAGE)
+        translations = []
+    else:
+        translations = get_translations(td.page_id)
+        parent_info = get_parent_lang(translations, td.page_id)
+        if parent_info:
+            parent, translated_locale = parent_info
+        else:
+            parent = None
+            translated_locale = locale
     if same_content_revs.exists():
         # We migrated staging first?
         if is_approved and not same_content_revs[0].is_approved:
@@ -441,20 +451,13 @@ def create_document(td, verbosity=1):
             revision.save()
             document = revision.document
             document.current_revision = revision
+            if not document.parent and parent:
+                document.parent = parent
             document.save()
         if verbosity > 1:
             warnings.append(WARNINGS['same_content'] % same_content_revs[0].id)
         return (None, None, warnings)
 
-    if locale == settings.WIKI_DEFAULT_LANGUAGE:
-        parent, translated_locale = (None, settings.WIKI_DEFAULT_LANGUAGE)
-    else:
-        parent_info = get_parent_lang(translations, td.page_id)
-        if parent_info:
-            parent, translated_locale = parent_info
-        else:
-            parent = None
-            translated_locale = locale
     category = get_category(td, translations)
     if not category:  # Skip this
         warnings.append(WARNINGS['skip'])
@@ -536,8 +539,6 @@ def create_template(content_template):
     document = Document(title=title, slug=slug, locale=locale,
                         parent=parent, category=category,
                         is_localizable=is_localizable)
-    #if 'toparticles' in title:
-    #    import pdb; pdb.set_trace()
     document.save()
 
     # Then create its first revision
