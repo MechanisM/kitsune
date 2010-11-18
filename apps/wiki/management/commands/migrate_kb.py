@@ -40,7 +40,12 @@ from sumo.models import WikiPage, CategoryObject, TikiObject
 from sumo import ProgrammingError
 
 
+hdlr = logging.FileHandler('log.txt')
+formatter = logging.Formatter('[%(asctime)s]%(levelname)-8s"%(message)s"',
+                              '%Y-%m-%d %a %H:%M:%S')
+hdlr.setFormatter(formatter)
 log = logging.getLogger('k.migrate')
+log.addHandler(hdlr)
 # Converts TikiWiki syntax to MediaWiki syntax
 converter = TikiMarkupConverter()
 htmlparser = HTMLParser()
@@ -73,7 +78,7 @@ def get_django_user(obj, field_name='user'):
     return user
 
 
-def get_title_is_approved(title):
+def get_title_is_approved_preliminary(title):
     """Returns a tuple (is_approved, title), special cased for staging
     articles"""
     # No surrounding whitespace, please
@@ -81,6 +86,19 @@ def get_title_is_approved(title):
     if title.startswith('*'):
         return (False, title[1:].strip())
     return (True, title)
+
+
+def get_title_is_approved(td, cat_ids):
+    """Returns a tuple (is_approved, title), special cased for never-before
+    seen-footage, aka. never-approved"""
+    is_approved, title = get_title_is_approved_preliminary(td.title)
+    if is_approved and 3 in cat_ids:
+        staging = u'*' + td.title
+        # If there is a staging copy already, this page has been approved
+        # otherwise it hasn't
+        is_approved = WikiPage.objects.filter(lang=td.lang,
+                                              title=staging).exists()
+    return (is_approved, title)
 
 
 def get_slug(title):
@@ -138,7 +156,7 @@ def get_parent_lang(translations, page_id):
         # get the parent tiki document
         parent_td = WikiPage.objects.get(page_id=parent_id)
         # We assume that the parent exists
-        _, title = get_title_is_approved(parent_td.title)
+        _, title = get_title_is_approved_preliminary(parent_td.title)
         try:
             return (Document.objects.get(
                         title=title, locale=settings.WIKI_DEFAULT_LANGUAGE),
@@ -216,13 +234,17 @@ TIKI_CATEGORY_IDS = {
 skipped_en_document_ids = []
 
 
-def get_category(td, translations):
+def get_cat_ids(td):
+    """Get a list of category ids from Tiki."""
     tiki_objects = TikiObject.objects.filter(type='wiki page', itemId=td.title)
     obj_ids = [t_o.objectId for t_o in tiki_objects]
     categories = CategoryObject.objects.filter(
         categId__in=TIKI_CATEGORY_IDS.keys(), catObjectId__in=obj_ids)
-    cat_ids = [c.categId for c in categories]
+    return [c.categId for c in categories]
 
+
+def get_category(td, translations, cat_ids):
+    """Get the category. Yes, it's as complicated as it looks."""
     parent_info = None
     locale = get_locale(td.lang)
     if locale != 'en-US':
@@ -264,7 +286,7 @@ def get_category(td, translations):
         #       (it's not in KB nor in staging
         #        OR it's a staging article which doesn't have a KB copy)
         if not parent_id:
-            is_approved, title = get_title_is_approved(td.title)
+            is_approved, title = get_title_is_approved(td, cat_ids)
             if not (is_approved or 3 in cat_ids):  # not kb, not staging
                 return 0
             elif is_approved and not WikiPage.objects.filter(
@@ -387,11 +409,11 @@ def create_revision(td, document, content, is_approved=False):
     try:
         revision.save()
     except ProgrammingError:
-        print 'ProgrammingError: #%s [%s] %s based on #%s [%s] %s.' % (
+        log.debug('ProgrammingError: #%s [%s] %s based on #%s [%s] %s.' % (
             revision.document.id,
             revision.document.locale, revision.document.title,
             revision.based_on.id, revision.based_on.document.locale,
-            revision.based_on.document.title)
+            revision.based_on.document.title))
     return revision
 
 
@@ -409,65 +431,8 @@ def create_revision_on_slug_collision(td, title, locale, is_approved, content):
     return (document, revision)
 
 
-def create_document(td, verbosity=1):
-    """Create a document from a Tiki document."""
-    warnings = []
-
-    # TODO: first-time articles with no staging copy should NOT  be approved
-    is_approved, title = get_title_is_approved(td.title)
-    slug = get_slug(title)
-
-    locale = get_locale(td.lang)
-    # English articles are localizable, translations are not.
-    if locale == settings.WIKI_DEFAULT_LANGUAGE:
-        is_localizable = True
-    else:
-        is_localizable = False
-
-    # Check for duplicate content and bail if there's already some
-    content, warnings = convert_content(td.content)
-    if not content:  # Why should I bother to migrate this?
-        if verbosity > 1:
-            warnings.append(WARNINGS['empty_content'])
-        return (None, None, warnings)
-    same_content_revs = Revision.objects.filter(content=content,
-                                                document__locale=locale)
-    if locale == settings.WIKI_DEFAULT_LANGUAGE:
-        parent, translated_locale = (None, settings.WIKI_DEFAULT_LANGUAGE)
-        translations = []
-    else:
-        translations = get_translations(td.page_id)
-        parent_info = get_parent_lang(translations, td.page_id)
-        if parent_info:
-            parent, translated_locale = parent_info
-        else:
-            parent = None
-            translated_locale = locale
-    if same_content_revs.exists():
-        # We migrated staging first?
-        if is_approved and not same_content_revs[0].is_approved:
-            revision = same_content_revs[0]
-            revision.is_approved = True
-            revision.save()
-            document = revision.document
-            document.current_revision = revision
-            if not document.parent and parent:
-                document.parent = parent
-            document.save()
-        if verbosity > 1:
-            warnings.append(WARNINGS['same_content'] % same_content_revs[0].id)
-        return (None, None, warnings)
-
-    category = get_category(td, translations)
-    if not category:  # Skip this
-        warnings.append(WARNINGS['skip'])
-    if not category or category == -1:  # -1 doesn't show warning
-        return (None, None, warnings)
-
-    # Create the document first
-    document = Document(title=title, slug=slug, locale=locale,
-                        parent=parent, category=category,
-                        is_localizable=is_localizable)
+def save_document(document, td, warnings, title, locale,
+                  is_approved, content, translated_locale, verbosity):
     try:
         document.save()
 
@@ -486,20 +451,95 @@ def create_document(td, verbosity=1):
 
         # Attempting a different locale
         if verbosity > 1:
-            warnings.append(u'Using language from translation table (%s) '
-                            u'instead of page language (%s).' % (
-                            translated_locale, locale))
-        document.locale = translated_locale
+            warnings.append(u'Using page language (%s) '
+                            u'instead of language from translation table (%s).'
+                            % (locale, translated_locale))
+        document.locale = locale
         try:
             document.save()
         except SlugCollision:  # A staging or approved copy exists
             document, revision = create_revision_on_slug_collision(
-                td, title, translated_locale, is_approved, content)
+                td, title, locale, is_approved, content)
             return (document, revision, warnings)
         except IntegrityError:
             warnings.append(u'A translation already exists for this document '
-                            u'in %s locale.' % translated_locale)
+                            u'in %s locale.' % locale)
             return (None, None, warnings)
+    return True
+
+
+def create_document(td, verbosity=1):
+    """Create a document from a Tiki document."""
+    warnings = []
+
+    cat_ids = get_cat_ids(td)
+    is_approved, title = get_title_is_approved(td, cat_ids)
+    slug = get_slug(title)
+
+    locale = get_locale(td.lang)
+    # English articles are localizable, translations are not.
+    if locale == settings.WIKI_DEFAULT_LANGUAGE:
+        is_localizable = True
+    else:
+        is_localizable = False
+
+    # Check for duplicate content and bail if there's already some
+    content, warnings = convert_content(td.content)
+
+    if locale == settings.WIKI_DEFAULT_LANGUAGE:
+        parent, translated_locale = (None, settings.WIKI_DEFAULT_LANGUAGE)
+        translations = []
+    else:
+        translations = get_translations(td.page_id)
+        parent_info = get_parent_lang(translations, td.page_id)
+        if parent_info:
+            parent, translated_locale = parent_info
+        else:
+            parent = None
+            translated_locale = locale
+
+    category = get_category(td, translations, cat_ids)
+    if not category:  # Skip this
+        warnings.append(WARNINGS['skip'])
+    if not category or category == -1:  # -1 doesn't show warning
+        return (None, None, warnings)
+    if not content:  # Why should I bother to migrate this?
+        if verbosity > 1:
+            warnings.append(WARNINGS['empty_content'])
+        return (None, None, warnings)
+
+    # Get revisions with the same content as this tiki page
+    same_content_revs = Revision.objects.filter(content=content,
+                                                document__locale=locale)
+
+    if same_content_revs.exists():
+        # We migrated staging first?
+        if is_approved and not same_content_revs[0].is_approved:
+            revision = same_content_revs[0]
+            revision.is_approved = True
+            revision.save()
+            document = revision.document
+            document.current_revision = revision
+            if not document.parent and parent:
+                document.parent = parent
+            result = save_document(
+                document, td, warnings, title, locale, is_approved, content,
+                translated_locale, verbosity)
+            if isinstance(result, tuple):
+                return result
+        if verbosity > 1:
+            warnings.append(WARNINGS['same_content'] % same_content_revs[0].id)
+        return (None, None, warnings)
+
+    # Create the document first
+    # XXX: consider using locale if translated_locale breaks too many things
+    document = Document(title=title, slug=slug, locale=translated_locale,
+                        parent=parent, category=category,
+                        is_localizable=is_localizable)
+    result = save_document(document, td, warnings, title, locale, is_approved,
+                           content, translated_locale, verbosity)
+    if isinstance(result, tuple):
+        return result
 
     warnings.extend(check_content(content))
 
@@ -668,9 +708,9 @@ class Command(NoArgsCommand):
 
         def print_template_info(template):
             if options['verbosity'] > 1:
-                print u'Processing (%s) Template:%s | #%s...' % (
+                log.debug(u'Processing (%s) Template:%s | #%s...' % (
                     template['locale'], template['label'],
-                    template['id'])
+                    template['id']))
 
         # Go through en_ids first
         for id in en_ids:
@@ -719,9 +759,9 @@ class Command(NoArgsCommand):
                 continue
 
             if options['verbosity'] > 1:
-                print u'Processing (%s) %s | #%s...' % (
+                log.debug(u'Processing (%s) %s | #%s...' % (
                     tiki_document.lang, tiki_document.title,
-                    tiki_document.page_id)
+                    tiki_document.page_id))
 
             # Create document...
             document, _, warnings = create_document(tiki_document,

@@ -183,6 +183,9 @@ CONVERTER_PATTERNS = (
     # nested. Fix that.
     (r'\[\[(?P<href>[^\n):\]]+)\|\[\[Image:(?P<src>[^\n):\]]+)\]\]\]\]',
      '[[Image:\g<src>|page=\g<href>]]'),
+    (' \?', '&nbsp;?'),
+    (u'\u00ab ', u'\u00ab&nbsp;'),
+    (u' \u00bb', u'&nbsp;\u00bb'),
     (r'\r', ''),
 )
 
@@ -459,7 +462,7 @@ CLASSES_MAP = {
 }
 
 # These trigger using the {for} markup
-TO_SHOWFOR_FF = tuple([ver[2] for ver in FIREFOX_VERSIONS])
+TO_SHOWFOR_FF = tuple([ver[3] for ver in FIREFOX_VERSIONS])
 TO_SHOWFOR_OS = tuple([ver[2] for ver in OPERATING_SYSTEMS])
 TO_SHOWFOR_CLASSES = TO_SHOWFOR_FF + TO_SHOWFOR_OS + (
                      'win,linux', 'win,mac', 'mac,linux')

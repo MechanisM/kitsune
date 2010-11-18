@@ -14,8 +14,8 @@ class HelpersNoFixtures(TestCase):
     def test_title_is_approved(self):
         """Title and is_approved are properly set for staging vs approved
         pages"""
-        eq_((False, 'test'), get_title_is_approved('*test'))
-        eq_((True, 'test'), get_title_is_approved('test'))
+        eq_((False, 'test'), get_title_is_approved_preliminary('*test'))
+        eq_((True, 'test'), get_title_is_approved_preliminary('test'))
 
     def test_get_locale(self):
         """Locale works and uses en-US as fallback"""
@@ -147,16 +147,20 @@ class HelpersFixtures(TestCase):
     def test_get_category_english(self):
         """Category for english articles."""
         td = WikiPage.objects.get(page_id=2)
-        eq_(30, get_category(td, get_translations(2)))
+        cat_ids = get_cat_ids(td)
+        eq_(30, get_category(td, get_translations(2), cat_ids))
 
         td = WikiPage.objects.get(page_id=5)
-        eq_(20, get_category(td, get_translations(5)))
+        cat_ids = get_cat_ids(td)
+        eq_(20, get_category(td, get_translations(5), cat_ids))
 
         td = WikiPage.objects.get(page_id=5965)
-        eq_(10, get_category(td, get_translations(5965)))
+        cat_ids = get_cat_ids(td)
+        eq_(10, get_category(td, get_translations(5965), cat_ids))
 
         td.title = 'group permissions'
-        eq_(40, get_category(td, get_translations(5965)))
+        cat_ids = get_cat_ids(td)
+        eq_(40, get_category(td, get_translations(5965), cat_ids))
 
     def test_get_category_translation(self):
         """Category for translated articles."""
@@ -165,10 +169,11 @@ class HelpersFixtures(TestCase):
         d, _, _ = create_document(td)
         td = WikiPage.objects.get(page_id=6234)
         translations = get_translations(td.page_id)
-        eq_(10, get_category(td, translations))
+        cat_ids = get_cat_ids(td)
+        eq_(10, get_category(td, translations, cat_ids))
         d.category = 30  # pretend this is 3
         d.save()
-        eq_(30, get_category(td, translations))
+        eq_(30, get_category(td, translations, cat_ids))
 
     def test_get_firefox_versions(self):
         """Returns a list of firefox version IDs"""

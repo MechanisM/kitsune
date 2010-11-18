@@ -503,3 +503,9 @@ class TestConverter(TestCase):
         content = '{SCREENCAST (file=>file-1234-123) }{SCREENCAST}'
         expected = '[[Video:file-1234-123]]'
         eq_(expected, converter.parse(content)[0])
+
+    def test_special_nbsping(self):
+        """NBSP left-double-arrow, right-double-arrow, and ?"""
+        content = u'Some\u00ab text \u00bb ?'
+        expected = u'Some\u00ab&nbsp;text&nbsp;\u00bb&nbsp;?'
+        eq_(expected, converter.convert(content))
