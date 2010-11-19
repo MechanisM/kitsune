@@ -423,7 +423,12 @@ def convert_content(tiki_content):
 
 
 def create_revision_on_slug_collision(td, title, locale, is_approved, content):
-    document = Document.uncached.get(title=title, locale=locale)
+    try:
+        document = Document.uncached.get(title=title, locale=locale)
+    except Document.DoesNotExist:
+        log.debug('Failed to find %s %s on migrating %s.' % (
+                    title, locale, td))
+        return (None, None)
     revision = create_revision(td, document, content, is_approved)
     if is_approved:  # This one is approved, so mark it as current
         document.current_revision = revision
