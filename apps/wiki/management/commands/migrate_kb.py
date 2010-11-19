@@ -82,7 +82,7 @@ def get_title_is_approved_preliminary(title):
     """Returns a tuple (is_approved, title), special cased for staging
     articles"""
     # No surrounding whitespace, please
-    title = title.strip()
+    title = title.replace('/', ' ').strip()
     if title.startswith('*'):
         return (False, title[1:].strip())
     return (True, title)
@@ -103,7 +103,7 @@ def get_title_is_approved(td, cat_ids):
 
 def get_slug(title):
     """Slugify a documment title"""
-    return title.replace('/', ' ')  # Agreed to just use the title as the slug
+    return title  # Agreed to just use the title as the slug
 
 
 def get_locale(lang):
@@ -423,7 +423,7 @@ def convert_content(tiki_content):
 
 
 def create_revision_on_slug_collision(td, title, locale, is_approved, content):
-    document = Document.objects.get(title=title, locale=locale)
+    document = Document.uncached.get(title=title, locale=locale)
     revision = create_revision(td, document, content, is_approved)
     if is_approved:  # This one is approved, so mark it as current
         document.current_revision = revision
