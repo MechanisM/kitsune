@@ -443,7 +443,7 @@ def save_document(document, td, warnings, title, locale,
 
     except SlugCollision:  # A staging or approved copy was previously migrated
         document, revision = create_revision_on_slug_collision(
-            td, title, locale, is_approved, content)
+            td, title, translated_locale, is_approved, content)
         return (document, revision, warnings)
 
     except IntegrityError:  # Usually caused by same parent for this locale
