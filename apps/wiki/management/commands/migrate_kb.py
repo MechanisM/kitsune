@@ -41,9 +41,8 @@ from sumo import ProgrammingError
 
 
 hdlr = logging.FileHandler('log.txt')
-formatter = logging.Formatter('[%(asctime)s]%(levelname)-8s"%(message)s"',
-                              '%Y-%m-%d %a %H:%M:%S')
-hdlr.setFormatter(formatter)
+fmt = '%(asctime)s %(name)s:%(levelname)s %(message)s :%(pathname)s:%(lineno)s'
+hdlr.setFormatter(logging.Formatter(fmt, datefmt='%H:%M:%S')
 log = logging.getLogger('k.migrate')
 log.addHandler(hdlr)
 # Converts TikiWiki syntax to MediaWiki syntax

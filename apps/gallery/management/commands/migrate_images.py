@@ -74,7 +74,7 @@ def create_image(file, title, description):
         check_file_size(file)
     img.file.save(file_name, file, save=True)
     try:
-        generate_image_thumbnail(img, file_name)
+        generate_image_thumbnail(img, img.file, file_name)
     except IOError:
         # Not an actual image
         img.delete()
