@@ -684,8 +684,8 @@ def fetch_rest_documents(count, offset):
 
 class Command(NoArgsCommand):
     help = 'Migrate data for tiki pages.'
-    max_documents = 9000  # Max number of documents to store at any time
-    max_total_documents = 9000  # Max number of documents to migrate
+    max_documents = 20000  # Max number of documents to store at any time
+    max_total_documents = 20000  # Max number of documents to migrate
     _exhausted_en_documents = False
 
     def fetch_documents(self, count, offset):
