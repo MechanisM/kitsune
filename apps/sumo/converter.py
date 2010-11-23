@@ -79,8 +79,8 @@ def _img_convert_param(param, use_wiki_syntax):
     name, value = name.strip(), value.strip()
     if name == 'vertical-imalign':
         # Circular imports FTL...
-        from sumo.parser import IMAGE_PARAMS
-        if not (value in IMAGE_PARAMS['valign']):
+        from sumo.parser import IMAGE_PARAM_VALUES
+        if not (value in IMAGE_PARAM_VALUES['valign']):
             return ''
         if use_wiki_syntax:
             return 'valign=' + value
