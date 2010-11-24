@@ -509,3 +509,11 @@ class TestConverter(TestCase):
         content = u'Some\u00ab text \u00bb ?'
         expected = u'Some\u00ab&nbsp;text&nbsp;\u00bb&nbsp;?'
         eq_(expected, converter.convert(content))
+
+    def test_screencast_grabs(self):
+        """SCREENCAST should work inline with other closing tags, etc."""
+        content = ('{DIV(class=win,type=span)}'
+                   '{SCREENCAST(file=>123)}{SCREENCAST}{DIV}'
+                   '{DIV(class=button,type=>span)}Yes{DIV} go!')
+        expected = u'{for win}[[Video:123]]{/for}{button Yes} go!'
+        eq_(expected, converter.parse(content)[0])

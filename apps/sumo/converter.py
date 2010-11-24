@@ -28,9 +28,6 @@ New syntax summary:
 """
 
 # TODO: convert ;: at beginning of line
-# TODO: this: {button {for mac}mac{/for}{for not mac}not mac{/for} etc}
-#       to: {for mac}{button mac}{/for}...
-# TODO: << and >> (single chars) adjacent &nbsp; (scoobidiver's comment in bug)
 
 import re
 from xml.sax.saxutils import quoteattr
@@ -158,7 +155,7 @@ CONVERTER_PATTERNS = (
     (r'~~#(?P<color>\d{3,}):(?P<txt>.*?)~~',
      '<span style="color:#\g<color>">\g<txt></span>'),
     (r'~(h|t)c~(?P<txt>.*?)~\/(h|t)c~', '<!--\g<txt>-->'),
-    (r'\{SCREENCAST\s*\(\s*file=?\>?\s*(?P<file>.*?)\).*\}',
+    (r'\{SCREENCAST\s*\(\s*file=?\>?\s*(?P<file>.*?)\).*?\}',
      '[[Video:\g<file>]]'),
     (r'\{\s*SCREENCAST\s*\}', ''),  # remaining are useless closing tags
     (r'\{img.*?'             # {img followed by anything
