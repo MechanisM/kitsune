@@ -187,6 +187,14 @@ CONVERTER_PATTERNS = (
 )
 
 
+POSTPROCESS_PATTERNS = (
+    (r'\n\n(?P<for>\{for[^\{\}]*?\})', '\n\g<for>'),
+    (r'(?P<for>\{for[^\{\}]*?\})\n\n', '\g<for>\n'),
+    (r'\{/for\}\n\n', '{/for}\n'),
+    (r'\n\n\{/for\}', '\n{/for}'),
+)
+
+
 STACKS_PATTERNS = {
     'div': (
     ('entry', r'(\{DIV[^\{\}]*?\})'),  # this marks the entry/exit point
@@ -221,6 +229,10 @@ converter_patterns = [
     (re.compile(pattern[0], re.MULTILINE | re.DOTALL), pattern[1]) for
     pattern in CONVERTER_PATTERNS]
 
+postprocess_patterns = [
+    (re.compile(pattern[0], re.MULTILINE | re.DOTALL), pattern[1]) for
+    pattern in POSTPROCESS_PATTERNS]
+
 
 def stacks_patterns_entry_to_dict(entry):
     return dict([(k, re.compile(p, re_plugin_flags)) for k, p in entry])
@@ -239,6 +251,11 @@ class TikiMarkupConverter(object):
 
     def convert(self, text):
         for p in converter_patterns:
+            text = p[0].sub(p[1], text)
+        return text
+
+    def postprocess(self, text):
+        for p in postprocess_patterns:
             text = p[0].sub(p[1], text)
         return text
 
@@ -324,6 +341,7 @@ class TikiMarkupConverter(object):
             text = func(text)
         # We don't like surrounding whitespace
         text = text.strip()
+        text = self.postprocess(text)
         return (text, self.warnings)
 
 
@@ -371,7 +389,7 @@ def get_showfor_openers(showfor, pda):
     open_text = ''
     for param in ('os', 'browser'):
         if showfor[param]:
-            open_text += '{for %s}' % ','.join(showfor[param])
+            open_text += '\n{for %s}\n' % ','.join(showfor[param])
 
     return open_text
 
@@ -383,7 +401,7 @@ def get_showfor_closers(showfor, pda):
     close_text = ''
     for param in ('os', 'browser'):
         if showfor[param]:
-            close_text += '{/for}'
+            close_text += '\n{/for}\n'
 
     return close_text
 

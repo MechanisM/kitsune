@@ -250,7 +250,8 @@ class TestConverter(TestCase):
         """{SHOWFOR(browser=...)}."""
         content = ('So {SHOWFOR(browser=firefox3)}3.0 me{SHOWFOR}'
                    ' and then {SHOWFOR(browser=ff4}4.0 me{SHOWFOR}!')
-        expected = 'So {for fx3}3.0 me{/for} and then {for fx4}4.0 me{/for}!'
+        expected = ('So \n{for fx3}\n3.0 me\n{/for}\n and then \n{for fx4}\n'
+                    '4.0 me\n{/for}\n!')
 
         eq_(expected, converter.parse(content)[0])
 
@@ -258,15 +259,17 @@ class TestConverter(TestCase):
         """Unrealistic showfor browser test."""
         content = ('So {SHOWFOR(browser=firefox3+ff4)}3.0 me'
                    ' and {SHOWFOR(browser=ff4}4.0 me{SHOWFOR}!{SHOWFOR}!')
-        expected = 'So {for fx4,fx3}3.0 me and {for fx4}4.0 me{/for}!{/for}!'
+        expected = ('So \n{for fx4,fx3}\n3.0 me and \n{for fx4}\n4.0 me'
+                    '\n{/for}\n!\n{/for}\n!')
 
         eq_(expected, converter.parse(content)[0])
 
     def test_showfor_os(self):
         """{SHOWFOR(os=...)}."""
-        content = ('So {SHOWFOR(os=unix)}unixify{SHOWFOR}'
-                   '! and {SHOWFOR(os=windows}win{SHOWFOR}!')
-        expected = 'So {for linux}unixify{/for}! and {for win}win{/for}!'
+        content = ('So \n{SHOWFOR(os=unix)}\nunixify\n{SHOWFOR}\n'
+                   ' ! and {SHOWFOR(os=windows}win{SHOWFOR}!')
+        expected = ('So \n{for linux}\nunixify\n{/for}\n ! and '
+                    '\n{for win}\nwin\n{/for}\n!')
 
         eq_(expected, converter.parse(content)[0])
 
@@ -277,9 +280,9 @@ class TestConverter(TestCase):
                    '{SHOWFOR(os=mac)}mac only{SHOWFOR} or '
                    '{SHOWFOR(os=linux)}linux only{SHOWFOR}...{SHOWFOR}'
                    ',,,{SHOWFOR}!')
-        expected = ('So {for mac,linux}unixify on {for fx4}4.0 '
-                    '{for mac}mac only{/for} or {for linux}linux only{/for}...'
-                    '{/for},,,{/for}!')
+        expected = ('So \n{for mac,linux}\nunixify on \n{for fx4}\n4.0 '
+                    '\n{for mac}\nmac only\n{/for}\n or \n{for linux}'
+                    '\nlinux only\n{/for}\n...\n{/for}\n,,,\n{/for}\n!')
 
         eq_(expected, converter.parse(content)[0])
 
@@ -287,11 +290,11 @@ class TestConverter(TestCase):
         """Firefox 2 is removed from showfor."""
         content = ('So {SHOWFOR(browser=firefox3+ff2)}not removed'
                    '{SHOWFOR(browser=ff2)}removed{SHOWFOR}!{SHOWFOR}!')
-        expected = 'So {for fx3}not removed!{/for}!'
+        expected = 'So \n{for fx3}\nnot removed!\n{/for}\n!'
         eq_(expected, converter.parse(content)[0])
         content = ('So {SHOWFOR(browser=firefox2)}removed{SHOWFOR}'
                    '{SHOWFOR(browser=ff3)}not removed!{SHOWFOR}!')
-        expected = 'So {for fx3}not removed!{/for}!'
+        expected = 'So \n{for fx3}\nnot removed!\n{/for}\n!'
         eq_(expected, converter.parse(content)[0])
 
     def test_div_fx2(self):
