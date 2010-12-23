@@ -12,7 +12,11 @@
       {% endif %}
     </section>
     <section id="main-area">
-      <h1>{{ display_name(profile.user) }}</h1>
+      <h1>{{ display_name(profile.user) }}
+          {% if profile.name %}
+            <em>({{ profile.user.username }})</em>
+          {% endif %}
+      </h1>
       {% if profile.country %}
         <h2>
           {% if profile.city %}
@@ -23,44 +27,30 @@
           {% endif %}
         </h2>
       {% endif %}
-      {% if (profile.livechat_id and profile.livechat_id != profile.user.username) or profile.name %}
-        <ul>
-          {% if profile.name %}
-            <li>{{ _('Username: {username}')|f(username=profile.user.username) }}</li>
-          {% endif %}
-          {% if profile.livechat_id|lower != profile.user.username|lower %}
-            <li>{{ _('Livechat ID: {livechat_id}')|f(livechat_id=profile.livechat_id) }}</li>
-          {% endif %}
-        </ul>
-      {% endif %}{# username, livechat_id #}
-      {% if profile.bio %}
-          <div id="bio">{{ profile.bio|wiki_to_html }}</div>
-        </li>
-      {% endif %}
+      <div id="bio">{{ profile.bio|wiki_to_html }}</div>
     </section>
     <section id="contact-area">
-      <h1>{{ _('Contact') }}</h1>
-      {% if profile.public_email or profile.website or profile.twitter or profile.facebook or profile.irc_handle %}
-        <ul>
-          {% if profile.public_email %}
-            <li class="email">{{ profile.user.email|public_email }}</li>
-          {% endif %}
-          {% if profile.website %}
-            <li><a rel="nofollow" href="{{ profile.website }}">{{ _('Website') }}</a></li>
-          {% endif %}
-          {% if profile.twitter %}
-            <li><a rel="nofollow" href="{{ profile.twitter }}">{{ _('Twitter') }}</a></li>
-          {% endif %}
-          {% if profile.facebook %}
-            <li><a rel="nofollow" href="{{ profile.facebook }}">{{ _('Facebook') }}</a></li>
-          {% endif %}
-          {% if profile.irc_handle %}
-            <li>{{ _('IRC nickname: {nickname}')|f(nickname=profile.irc_handle) }}</li>
-          {% endif %}
-        </ul>
-      {% else %}
-        {{ _('This user has not made any contact information public.') }}
-      {% endif %}
+      <ul>
+        {% if profile.public_email %}
+          <li class="email">{{ profile.user.email|public_email }}</li>
+        {% endif %}
+        {% if profile.website %}
+          <li><a rel="nofollow" href="{{ profile.website }}">{{ _('Website') }}</a></li>
+        {% endif %}
+        {% if profile.twitter %}
+          <li><a rel="nofollow" href="{{ profile.twitter }}">{{ _('Twitter') }}</a></li>
+        {% endif %}
+        {% if profile.facebook %}
+          <li><a rel="nofollow" href="{{ profile.facebook }}">{{ _('Facebook') }}</a></li>
+        {% endif %}
+        {% if profile.irc_handle %}
+          <li>{{ _('IRC: {nickname}')|f(nickname=profile.irc_handle) }}</li>
+        {% endif %}
+        {% if profile.livechat_id and
+              profile.livechat_id|lower != profile.user.username|lower %}
+          <li>{{ _('Livechat ID: {livechat_id}')|f(livechat_id=profile.livechat_id) }}</li>
+        {% endif %}
+      </ul>
     </section>
   </article>
 {% endblock %}

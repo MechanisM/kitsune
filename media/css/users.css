@@ -85,21 +85,30 @@ article.main div.submit {
 }
 
 /* profile view */
-#profile section {
-    display: inline-block;
-    margin: 0;
-    padding: 0;
-    vertical-align: top;
+#main-content article#profile {
+    padding-left: 20px;
 }
 
-#profile h2,
-#contact-area h1 {
-    font-size: 20px;
+#profile h2 {
+    color: #808080;
+    font-size: 16px;
+}
+
+#profile h1 em {
+    color: #999;
+    font-style: normal;
+}
+
+#main-area,
+#contact-area {
+    margin-left: 65px;    
 }
 
 section#avatar-area {
+    float: left;
+    margin-left: 0;
     text-align: center;
-    width: 12%;
+    width: 48px;
 }
 
 #edit-profile-link {
@@ -109,43 +118,9 @@ section#avatar-area {
     width: 80%;
 }
 
-section#main-area {
-    position: relative;
-    width: 57%;
-}
-
-#main-area ul {
-    list-style: none;
-    margin-top: 1em;
-}
-
-
-#main-area li:before {
-    content: '\00B7';
-    margin: 0 .5em;
-}
-#main-area li:first-child:before {
-    content: '';
-    margin: 0;
-}
-
-#main-area li {
-    float: left;
-}
-
-#bio {
-    position: absolute;
-    top: 90px;
-}
-
-section#contact-area {
-    padding-top: 90px;
-    margin-left: 3%;
-    width: 27%;
-}
-
-#contact-area h1 {
-    margin-bottom: .25em;
+#contact-area {
+    line-height: 1.4em;
+    margin-top: .7em;
 }
 
 #contact-area ul {

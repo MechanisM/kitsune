@@ -13,7 +13,7 @@
         $emails.each(function () {
             var email_val = $(this).text();
             $a = $('<a/>').attr('href', 'mailto:' + email_val)
-                          .html($(this).html());
+                          .html(gettext('Email'));
             $(this).html($a);
         });
     }
