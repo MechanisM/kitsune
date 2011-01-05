@@ -17,6 +17,14 @@
         can now <a href="{{ login_url }}">log in</a>, and go
         <a href="{{ profile_url }}">edit your profile</a>.{% endtrans %}
       </p>
+      {% if questions %}
+        <p>{{ _('Your questions are now visible on the site:') }}</p>
+        <ul class="questions">
+          {% for q in questions %}
+            <li><a href="{{ q.get_absolute_url() }}">{{ q.title }}</a></li>
+          {% endfor %}
+        </ul>
+      {% endif %}
     {% else %}
       <p class="failure">{% trans %}We could not activate your account.
         Please make sure that you have clicked the correct link in your
