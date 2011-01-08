@@ -18,7 +18,9 @@
         <a href="{{ profile_url }}">edit your profile</a>.{% endtrans %}
       </p>
       {% if questions %}
-        <p>{{ _('Your questions are now visible on the site:') }}</p>
+        <p>{{ ngettext('Your question is now visible on the site!',
+                       'Your question is now visible on the site!',
+                       questions.count()) }}
         <ul class="questions">
           {% for q in questions %}
             <li><a href="{{ q.get_absolute_url() }}">{{ q.title }}</a></li>
