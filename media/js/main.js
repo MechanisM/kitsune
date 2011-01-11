@@ -99,7 +99,9 @@ k = {};
 
         // Don't lazy load scripts that have already been loaded
         $.each($('script'), function () {
-            remove_item(scripts, $(this).attr('src'));
+            var this_src = $(this).attr('src');
+            if (!this_src) return ;
+            remove_item(scripts, this_src);
         });
 
         // Don't lazy load stylesheets that have already been loaded
