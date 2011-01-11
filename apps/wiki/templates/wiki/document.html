@@ -43,6 +43,13 @@
     <section id="doc-content">
       {% if document.current_revision %}
         {{ document.html|safe }}
+      {% elif document.parent and document.parent.current_revision %}
+        <div id="doc-pending-fallback">
+            {# L10n: This is shown for existing, never-approved translations #}
+            {# TODO: final message from Michael #}
+            {{ _('Translated but no approved copy.') }}
+        </div>
+        {{ document.parent.html|safe }}
       {% else %}
         {{ _("This article doesn't have approved content yet.") }}
       {% endif %}
