@@ -125,6 +125,7 @@ k = {};
      * E.g. list = ['string'], remove_item(list, 'str') => list is [].
      */
     function remove_item(from_list, match_against) {
+        match_against = match_against.toLowerCase();
         for (var i in from_list) {
             if (match_against.indexOf(from_list[i]) >= 0) {
                 from_list.splice(i, 1);
