@@ -19,7 +19,7 @@
       </p>
       {% if questions %}
         <p>{{ ngettext('Your question is now visible on the site!',
-                       'Your question is now visible on the site!',
+                       'Your questions are now visible on the site!',
                        questions.count()) }}
         <ul class="questions">
           {% for q in questions %}
