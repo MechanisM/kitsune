@@ -111,7 +111,7 @@ k = {};
 
         setTimeout(function lazyLoad() {
             for (i in scripts) {
-                $.getScript(k.MEDIA_URL + scripts[i]);
+                $.get(k.MEDIA_URL + scripts[i]);
             }
             for (i in styles) {
                 $('head').append(
